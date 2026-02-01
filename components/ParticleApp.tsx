@@ -28,7 +28,9 @@ import { usePreloadedRasterLayers } from "@/hooks/usePreloadedRasterLayers";
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
 
-const MAPBOX_SECRET_TOKEN = process.env.MAPBOX_SECRET_TOKEN || "";
+// Use the public token for tileset metadata fetching
+// Note: This only works for public tilesets - private tilesets need a secret token
+const MAPBOX_SECRET_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
 
 /**
  * Convert Unix timestamp to UTC time string
