@@ -94,66 +94,23 @@ const WeatherLegend: React.FC<WeatherLegendProps> = ({
   if (!variable) return null;
 
   return (
-    <div
-      style={{
-        position: "absolute",
-        bottom: "20px",
-        right: "20px",
-        background: "rgba(0, 0, 0, 0.85)",
-        padding: "12px 15px",
-        borderRadius: "8px",
-        color: "white",
-        fontSize: "12px",
-        zIndex: 1,
-        minWidth: "180px",
-      }}
-    >
-      <div style={{ fontWeight: 600, marginBottom: "6px" }}>
-        {variable.name}
-      </div>
+    <div className="weather-legend">
+      <div className="legend-title">{variable.name}</div>
 
       {/* Color bar */}
       {colorStops.length >= 2 && (
         <>
-          <div
-            style={{
-              height: "10px",
-              borderRadius: "3px",
-              background: gradient,
-              marginBottom: "4px",
-            }}
-          />
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              fontSize: "10px",
-              opacity: 0.8,
-            }}
-          >
-            <span>
-              {minValue}
-              {variable.units}
-            </span>
-            <span>
-              {maxValue}
-              {variable.units}
-            </span>
+          <div className="legend-gradient" style={{ background: gradient }} />
+          <div className="legend-labels">
+            <span>{minValue}{variable.units}</span>
+            <span>{maxValue}{variable.units}</span>
           </div>
         </>
       )}
 
-      <div
-        style={{
-          marginTop: "8px",
-          fontSize: "10px",
-          opacity: 0.6,
-          borderTop: "1px solid rgba(255,255,255,0.2)",
-          paddingTop: "6px",
-        }}
-      >
+      <div className="legend-meta">
         {modelRun && <div>HRRR {modelRun}</div>}
-        {ageText && <div style={{ color: "#4CAF50" }}>{ageText}</div>}
+        {ageText && <div style={{ color: "#10b981" }}>{ageText}</div>}
       </div>
     </div>
   );
@@ -506,104 +463,28 @@ const ParticleApp = () => {
         )}
       </Map>
 
-      {/* Top Right Controls */}
-      <div
-        style={{
-          position: "absolute",
-          top: "60px",
-          right: "20px",
-          zIndex: 1,
-          display: "flex",
-          flexDirection: "column",
-          gap: "8px",
-        }}
-      >
-        <button
-          onClick={() => setHerbieWindEnabled(!herbieWindEnabled)}
-          disabled={!herbieBandLoaded || !herbieBandValue}
-          style={{
-            padding: "10px 16px",
-            background: herbieWindEnabled ? "#4CAF50" : "#333",
-            border: "none",
-            borderRadius: "8px",
-            color: "white",
-            cursor:
-              herbieBandLoaded && herbieBandValue ? "pointer" : "not-allowed",
-            fontSize: "14px",
-            fontWeight: "500",
-            transition: "background 0.3s",
-            opacity: herbieBandLoaded && herbieBandValue ? 1 : 0.5,
-          }}
-        >
-          {herbieWindEnabled ? "Wind Particles ON" : "Wind Particles OFF"}
-        </button>
-      </div>
-
       {/* Left Panel - Controls */}
-      <div
-        style={{
-          position: "absolute",
-          top: "20px",
-          left: "20px",
-          background: "rgba(0, 0, 0, 0.85)",
-          padding: "15px",
-          borderRadius: "10px",
-          color: "white",
-          zIndex: 1,
-          minWidth: "220px",
-          maxHeight: "calc(100vh - 60px)",
-          overflowY: "auto",
-        }}
-      >
+      <div className="control-panel">
         {/* Weather Variable Selector */}
-        <div style={{ marginBottom: "20px" }}>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "10px",
-            }}
-          >
-            <h3 style={{ margin: 0, fontSize: "16px" }}>Weather Layer</h3>
+        <div className="panel-section">
+          <div className="section-header">
+            <span className="section-title">Weather Layer</span>
             <button
               onClick={() => setWeatherLayerEnabled(!weatherLayerEnabled)}
-              style={{
-                padding: "4px 8px",
-                background: weatherLayerEnabled ? "#4CAF50" : "#666",
-                border: "none",
-                borderRadius: "4px",
-                color: "white",
-                cursor: "pointer",
-                fontSize: "10px",
-              }}
+              className={`toggle-btn ${weatherLayerEnabled ? 'active' : 'inactive'}`}
             >
               {weatherLayerEnabled ? "ON" : "OFF"}
             </button>
           </div>
 
           {weatherLoading && !weatherMetadata && (
-            <div style={{ fontSize: "12px", opacity: 0.7 }}>
-              Loading weather data...
-            </div>
+            <div className="info-card">Loading weather data...</div>
           )}
 
           {weatherError && !weatherMetadata && (
-            <div style={{ fontSize: "12px", color: "#f44336" }}>
-              Error loading weather data
-              <button
-                onClick={refreshWeather}
-                style={{
-                  marginLeft: "8px",
-                  padding: "2px 6px",
-                  background: "#333",
-                  border: "none",
-                  borderRadius: "3px",
-                  color: "white",
-                  cursor: "pointer",
-                  fontSize: "10px",
-                }}
-              >
+            <div className="info-card" style={{ borderColor: 'rgba(244, 67, 54, 0.3)' }}>
+              <span style={{ color: '#f44336' }}>Error loading weather data</span>
+              <button onClick={refreshWeather} className="refresh-btn" style={{ marginLeft: '8px' }}>
                 Retry
               </button>
             </div>
@@ -612,64 +493,29 @@ const ParticleApp = () => {
           {weatherMetadata && weatherLayerEnabled && (
             <>
               {/* Data Freshness */}
-              <div
-                style={{
-                  padding: "6px 8px",
-                  background: "rgba(255,255,255,0.1)",
-                  borderRadius: "4px",
-                  marginBottom: "10px",
-                  fontSize: "11px",
-                }}
-              >
-                <div style={{ opacity: 0.7 }}>Model Run</div>
-                <div style={{ fontWeight: 500 }}>
+              <div className="info-card">
+                <div className="info-label">Model Run</div>
+                <div className="info-value">
                   HRRR {weatherMetadata.model_run?.cycle_formatted || "..."}
-                  <span
-                    style={{
-                      marginLeft: "8px",
-                      color:
-                        weatherMetadata.data_freshness?.status === "fresh"
-                          ? "#4CAF50"
-                          : "#FF9800",
-                    }}
-                  >
+                  <span className={`status-badge ${weatherMetadata.data_freshness?.status === "fresh" ? 'fresh' : 'stale'}`}>
                     {weatherMetadata.data_freshness?.age_minutes < 60
                       ? `${weatherMetadata.data_freshness?.age_minutes}m ago`
-                      : `${Math.floor(
-                          weatherMetadata.data_freshness?.age_minutes / 60
-                        )}h ago`}
+                      : `${Math.floor(weatherMetadata.data_freshness?.age_minutes / 60)}h ago`}
                   </span>
                 </div>
               </div>
 
               {/* Variable Buttons */}
-              <div
-                style={{ display: "flex", flexDirection: "column", gap: "6px" }}
-              >
+              <div className="variable-grid">
                 {weatherMetadata.variables.map((variable) => (
                   <button
                     key={variable.id}
                     onClick={() => setSelectedVariableId(variable.id)}
-                    style={{
-                      padding: "8px 10px",
-                      background:
-                        selectedVariableId === variable.id ? "#2196F3" : "#333",
-                      border: "none",
-                      borderRadius: "4px",
-                      color: "white",
-                      cursor: "pointer",
-                      fontSize: "12px",
-                      textAlign: "left",
-                      transition: "background 0.2s",
-                    }}
+                    className={`variable-btn ${selectedVariableId === variable.id ? 'selected' : ''}`}
                     title={variable.description}
                   >
-                    {variable.name}
-                    {variable.units && (
-                      <span style={{ opacity: 0.6, marginLeft: "4px" }}>
-                        ({variable.units})
-                      </span>
-                    )}
+                    <span>{variable.name}</span>
+                    {variable.units && <span className="units">({variable.units})</span>}
                   </button>
                 ))}
               </div>
@@ -684,25 +530,17 @@ const ParticleApp = () => {
               />
 
               {/* Opacity Slider */}
-              <div style={{ marginTop: "12px" }}>
-                <div
-                  style={{
-                    fontSize: "12px",
-                    opacity: 0.8,
-                    marginBottom: "4px",
-                  }}
-                >
-                  Opacity: {Math.round(weatherOpacity * 100)}%
+              <div className="opacity-section">
+                <div className="opacity-header">
+                  <span className="opacity-label">Layer Opacity</span>
+                  <span className="opacity-value">{Math.round(weatherOpacity * 100)}%</span>
                 </div>
                 <input
                   type="range"
                   min="0"
                   max="100"
                   value={weatherOpacity * 100}
-                  onChange={(e) =>
-                    setWeatherOpacity(parseInt(e.target.value) / 100)
-                  }
-                  style={{ width: "100%" }}
+                  onChange={(e) => setWeatherOpacity(parseInt(e.target.value) / 100)}
                 />
               </div>
             </>
@@ -710,89 +548,57 @@ const ParticleApp = () => {
         </div>
 
         {/* Divider */}
-        <div
-          style={{
-            borderTop: "1px solid rgba(255,255,255,0.2)",
-            margin: "15px 0",
-          }}
-        />
+        <div className="divider" />
 
         {/* Wind Forecast Time Selector */}
-        <div>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "10px",
-            }}
-          >
-            <h3 style={{ margin: 0, fontSize: "16px" }}>Wind Forecast Time</h3>
-            <button
-              onClick={refreshBands}
-              disabled={!bandsLoaded}
-              style={{
-                padding: "4px 8px",
-                background: bandsLoaded ? "#555" : "#333",
-                border: "none",
-                borderRadius: "4px",
-                color: "white",
-                cursor: bandsLoaded ? "pointer" : "not-allowed",
-                fontSize: "10px",
-                opacity: bandsLoaded ? 1 : 0.5,
-              }}
-              title="Refresh tileset metadata"
-            >
+        <div className="panel-section wind-section">
+          <div className="section-header">
+            <span className="section-title">Wind Particles</span>
+            <button onClick={refreshBands} disabled={!bandsLoaded} className="refresh-btn">
               Refresh
             </button>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+          {/* Wind Toggle */}
+          <button
+            onClick={() => setHerbieWindEnabled(!herbieWindEnabled)}
+            disabled={!herbieBandLoaded || !herbieBandValue}
+            className={`wind-btn ${herbieWindEnabled ? 'active' : ''}`}
+          >
+            <span>Animated Wind</span>
+            <span className={`wind-status ${herbieWindEnabled ? 'on' : 'off'}`}>
+              {herbieWindEnabled ? "ON" : "OFF"}
+            </span>
+          </button>
+
+          <div className="time-grid">
             {timeBands.map((band) => (
               <button
                 key={band.index}
                 onClick={() => setSelectedTimeSlice(band.index)}
-                style={{
-                  padding: "6px 10px",
-                  background:
-                    selectedTimeSlice === band.index ? "#4CAF50" : "#333",
-                  border: "none",
-                  borderRadius: "4px",
-                  color: "white",
-                  cursor: "pointer",
-                  fontSize: "12px",
-                  transition: "background 0.2s",
-                }}
+                className={`time-btn ${selectedTimeSlice === band.index ? 'selected' : ''}`}
               >
-                {band.label}
+                {band.label.split(' ')[1]}
               </button>
             ))}
           </div>
 
-          <div style={{ marginTop: "8px", fontSize: "11px", opacity: 0.7 }}>
-            {bandsLoaded ? (
-              selectedBand ? (
-                <>Wind: {selectedBand.label}</>
-              ) : (
-                <>Select a time for wind particles</>
-              )
-            ) : (
-              <>Loading wind bands...</>
-            )}
-          </div>
+          {selectedBand && (
+            <div style={{ marginTop: '12px', fontSize: '11px', color: 'rgba(255,255,255,0.5)', textAlign: 'center' }}>
+              Selected: {selectedBand.label}
+            </div>
+          )}
 
           {tilesetError && (
-            <div
-              style={{
-                marginTop: "8px",
-                padding: "6px",
-                background: "rgba(255, 152, 0, 0.2)",
-                border: "1px solid rgba(255, 152, 0, 0.5)",
-                borderRadius: "4px",
-                fontSize: "10px",
-                color: "#ff9800",
-              }}
-            >
+            <div style={{
+              marginTop: '12px',
+              padding: '10px',
+              background: 'rgba(245, 158, 11, 0.1)',
+              border: '1px solid rgba(245, 158, 11, 0.3)',
+              borderRadius: '8px',
+              fontSize: '11px',
+              color: '#f59e0b'
+            }}>
               {tilesetError}
               {retryCount > 0 && <span> (Retry {retryCount}/5)</span>}
             </div>
@@ -809,62 +615,14 @@ const ParticleApp = () => {
         />
       )}
 
-      {/* Loading indicator for weather refresh */}
-      {weatherLoading && weatherMetadata && (
-        <div
-          style={{
-            position: "absolute",
-            top: "20px",
-            right: "200px",
-            background: "rgba(33, 150, 243, 0.9)",
-            padding: "6px 10px",
-            borderRadius: "4px",
-            color: "white",
-            fontSize: "11px",
-            zIndex: 1,
-          }}
-        >
-          Refreshing...
-        </div>
-      )}
-
-      {/* Preloading indicator - shows progress while all forecast layers load */}
+      {/* Preloading indicator */}
       {weatherLayerEnabled && !weatherLayersReady && weatherTotalCount > 0 && (
-        <div
-          style={{
-            position: "absolute",
-            bottom: "80px",
-            left: "50%",
-            transform: "translateX(-50%)",
-            background: "rgba(0, 0, 0, 0.85)",
-            padding: "10px 16px",
-            borderRadius: "6px",
-            color: "white",
-            fontSize: "12px",
-            zIndex: 1,
-            textAlign: "center",
-          }}
-        >
-          <div style={{ marginBottom: "6px" }}>
-            Loading forecast layers: {weatherLoadedCount}/{weatherTotalCount}
+        <div className="loading-bar">
+          <div className="loading-text">
+            Loading forecasts: {weatherLoadedCount}/{weatherTotalCount}
           </div>
-          <div
-            style={{
-              width: "150px",
-              height: "4px",
-              background: "rgba(255,255,255,0.2)",
-              borderRadius: "2px",
-              overflow: "hidden",
-            }}
-          >
-            <div
-              style={{
-                width: `${weatherLoadProgress}%`,
-                height: "100%",
-                background: "#4CAF50",
-                transition: "width 0.2s",
-              }}
-            />
+          <div className="progress-bar">
+            <div className="progress-fill" style={{ width: `${weatherLoadProgress}%` }} />
           </div>
         </div>
       )}
