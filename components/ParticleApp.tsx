@@ -230,6 +230,7 @@ const ParticleApp = () => {
   });
 
   // Tile preloader configuration
+  // Use zoom level 4 for faster preloading (only ~8 tiles per forecast vs ~28 at zoom 5)
   const preloadConfig = useMemo(() => {
     if (!weatherMetadata || !selectedVariable?.latest_timestamp) return null;
     return {
@@ -237,7 +238,7 @@ const ParticleApp = () => {
       variable: selectedVariable.id,
       timestamp: selectedVariable.latest_timestamp,
       forecastHours: weatherMetadata.forecast_hours,
-      zoomLevel: 5,
+      zoomLevel: 4,
     };
   }, [weatherMetadata, selectedVariable]);
 

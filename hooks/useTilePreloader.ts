@@ -74,24 +74,32 @@ export function useTilePreloader(config: PreloadConfig | null): UseTilePreloader
     const tileY = centerTile?.y ?? 12;
 
     // Build list of tiles to preload
-    // Preload a grid of tiles per forecast hour at the specified zoom level
-    // Using a 5x5 grid for better coverage (25 tiles per forecast hour)
+    // Preload tiles covering the full CONUS extent at the specified zoom level
+    // CONUS at zoom 5: X range ~4-10, Y range ~10-13 (about 28 tiles)
+    // CONUS at zoom 4: X range ~2-5, Y range ~5-6 (about 8 tiles)
     const tilesToLoad: { url: string; forecastHour: string }[] = [];
-    const gridSize = 5; // 5x5 grid = 25 tiles per forecast hour
+    
+    // Define CONUS tile bounds for different zoom levels
+    const conusTileBounds: Record<number, { xMin: number; xMax: number; yMin: number; yMax: number }> = {
+      3: { xMin: 1, xMax: 2, yMin: 2, yMax: 3 },
+      4: { xMin: 2, xMax: 5, yMin: 5, yMax: 6 },
+      5: { xMin: 4, xMax: 10, yMin: 10, yMax: 13 },
+      6: { xMin: 9, xMax: 20, yMin: 20, yMax: 27 },
+    };
+    
+    const bounds = conusTileBounds[zoomLevel] || conusTileBounds[5];
 
     for (const forecastHour of forecastHours) {
-      // Preload a grid of tiles centered on the center tile
-      const startOffset = Math.floor(gridSize / 2); // e.g., 2 for 5x5 grid
-      
-      for (let dx = -startOffset; dx <= startOffset; dx++) {
-        for (let dy = -startOffset; dy <= startOffset; dy++) {
+      // Load all tiles in the CONUS bounds at this zoom level
+      for (let x = bounds.xMin; x <= bounds.xMax; x++) {
+        for (let y = bounds.yMin; y <= bounds.yMax; y++) {
           const tileUrl = urlTemplate
             .replace("{variable}", variable)
             .replace("{timestamp}", timestamp)
             .replace("{forecast}", forecastHour)
             .replace("{z}", String(zoomLevel))
-            .replace("{x}", String(tileX + dx))
-            .replace("{y}", String(tileY + dy));
+            .replace("{x}", String(x))
+            .replace("{y}", String(y));
 
           tilesToLoad.push({ url: tileUrl, forecastHour });
         }
@@ -130,8 +138,8 @@ export function useTilePreloader(config: PreloadConfig | null): UseTilePreloader
       });
     };
 
-    // Load tiles with limited concurrency (6 at a time)
-    const concurrencyLimit = 6;
+    // Load tiles with limited concurrency (12 at a time for faster preloading)
+    const concurrencyLimit = 12;
     for (let i = 0; i < tilesToLoad.length; i += concurrencyLimit) {
       if (cancelledRef.current) break;
 
