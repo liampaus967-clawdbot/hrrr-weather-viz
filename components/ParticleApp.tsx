@@ -22,6 +22,8 @@ import {
 } from "@/layers/source";
 import { useWeatherMetadata } from "@/hooks/useWeatherMetadata";
 import type { WeatherVariable, ColorStop } from "@/hooks/useWeatherMetadata";
+import { useGfsWaveMetadata } from "@/hooks/useGfsWaveMetadata";
+import type { WaveVariable } from "@/hooks/useGfsWaveMetadata";
 import ForecastAnimationController from "@/components/ForecastAnimationController";
 import { useTilePreloader } from "@/hooks/useTilePreloader";
 import { usePreloadedRasterLayers } from "@/hooks/usePreloadedRasterLayers";
@@ -57,15 +59,17 @@ interface TimeBand {
 // =============================================================================
 
 interface WeatherLegendProps {
-  variable: WeatherVariable | null;
+  variable: WeatherVariable | WaveVariable | null;
   modelRun: string | null;
   ageMinutes: number;
+  modelName?: string;
 }
 
 const WeatherLegend: React.FC<WeatherLegendProps> = ({
   variable,
   modelRun,
   ageMinutes,
+  modelName = "HRRR",
 }) => {
   const colorStops = variable?.color_stops || [];
 
@@ -109,7 +113,7 @@ const WeatherLegend: React.FC<WeatherLegendProps> = ({
       )}
 
       <div className="legend-meta">
-        {modelRun && <div>HRRR {modelRun}</div>}
+        {modelRun && <div>{modelName} {modelRun}</div>}
         {ageText && <div style={{ color: "#10b981" }}>{ageText}</div>}
       </div>
     </div>
@@ -157,6 +161,20 @@ const ParticleApp = () => {
     refresh: refreshWeather,
   } = useWeatherMetadata();
 
+  // GFS-Wave (Ocean) metadata from S3
+  const {
+    metadata: oceanMetadata,
+    loading: oceanLoading,
+    error: oceanError,
+    refresh: refreshOcean,
+  } = useGfsWaveMetadata();
+
+  // State for S3 ocean layer
+  const [oceanLayerEnabled, setOceanLayerEnabled] = useState(false);
+  const [selectedOceanVariableId, setSelectedOceanVariableId] = useState<string | null>(null);
+  const [selectedOceanForecast, setSelectedOceanForecast] = useState<string>("000");
+  const [oceanOpacity, setOceanOpacity] = useState<number>(0.7);
+
   // State for S3 weather layer
   const [weatherLayerEnabled, setWeatherLayerEnabled] = useState(true);
   const [selectedVariableId, setSelectedVariableId] = useState<string | null>(
@@ -179,6 +197,17 @@ const ParticleApp = () => {
     }
   }, [weatherMetadata, selectedVariableId]);
 
+  // Auto-select first ocean variable when metadata loads
+  useEffect(() => {
+    if (
+      oceanMetadata &&
+      oceanMetadata.variables.length > 0 &&
+      !selectedOceanVariableId
+    ) {
+      setSelectedOceanVariableId(oceanMetadata.variables[0].id);
+    }
+  }, [oceanMetadata, selectedOceanVariableId]);
+
   // Get selected variable details (must be defined before buildTileUrlForHook)
   const selectedVariable = useMemo(() => {
     if (!weatherMetadata || !selectedVariableId) return null;
@@ -186,6 +215,14 @@ const ParticleApp = () => {
       weatherMetadata.variables.find((v) => v.id === selectedVariableId) || null
     );
   }, [weatherMetadata, selectedVariableId]);
+
+  // Get selected ocean variable details
+  const selectedOceanVariable = useMemo(() => {
+    if (!oceanMetadata || !selectedOceanVariableId) return null;
+    return (
+      oceanMetadata.variables.find((v) => v.id === selectedOceanVariableId) || null
+    );
+  }, [oceanMetadata, selectedOceanVariableId]);
 
   // Preloaded raster layers for instant forecast transitions
   const weatherSourceConfig = useMemo(() => {
@@ -198,6 +235,17 @@ const ParticleApp = () => {
     };
   }, [weatherMetadata]);
 
+  // Ocean source config for GFS-Wave
+  const oceanSourceConfig = useMemo(() => {
+    if (!oceanMetadata) return null;
+    return {
+      tileSize: oceanMetadata.tiles.tile_size || 256,
+      minzoom: oceanMetadata.tiles.min_zoom || 0,
+      maxzoom: oceanMetadata.tiles.max_zoom || 8,
+      bounds: oceanMetadata.tiles.bounds as [number, number, number, number] | undefined,
+    };
+  }, [oceanMetadata]);
+
   // Build tile URL helper for preloaded layers hook
   const buildTileUrlForHook = useCallback(
     (forecast: string) => {
@@ -208,6 +256,18 @@ const ParticleApp = () => {
         .replace("{forecast}", forecast);
     },
     [weatherMetadata, selectedVariable]
+  );
+
+  // Build tile URL helper for ocean preloaded layers hook
+  const buildOceanTileUrlForHook = useCallback(
+    (forecast: string) => {
+      if (!oceanMetadata || !selectedOceanVariable?.latest_timestamp) return null;
+      return oceanMetadata.tiles.url_template
+        .replace("{variable}", selectedOceanVariable.id)
+        .replace("{timestamp}", selectedOceanVariable.latest_timestamp)
+        .replace("{forecast}", forecast);
+    },
+    [oceanMetadata, selectedOceanVariable]
   );
 
   const {
@@ -227,6 +287,27 @@ const ParticleApp = () => {
     buildTileUrl: buildTileUrlForHook,
     forecastHours: weatherMetadata?.forecast_hours || [],
     enabled: weatherLayerEnabled,
+  });
+
+  // Ocean preloaded layers
+  const {
+    initialize: initializeOceanLayers,
+    setActiveForecast: setActiveOceanForecast,
+    isReady: oceanLayersReady,
+    loadProgress: oceanLoadProgress,
+    loadedCount: oceanLoadedCount,
+    totalCount: oceanTotalCount,
+    cleanup: cleanupOceanLayers,
+    setOpacity: setOceanLayerOpacity,
+    reinitialize: reinitializeOceanLayers,
+  } = usePreloadedRasterLayers({
+    mapRef,
+    sourceConfig: oceanSourceConfig || { tileSize: 256 },
+    baseOpacity: oceanOpacity,
+    buildTileUrl: buildOceanTileUrlForHook,
+    forecastHours: oceanMetadata?.forecast_hours || [],
+    enabled: oceanLayerEnabled,
+    layerIdPrefix: "ocean",
   });
 
   // Tile preloader configuration
@@ -281,6 +362,32 @@ const ParticleApp = () => {
       reinitializeWeatherLayers();
     }
   }, [selectedVariableId]); // Only trigger on variable ID change
+
+  // Switch active ocean forecast when slider changes
+  useEffect(() => {
+    if (oceanLayersReady && oceanLayerEnabled) {
+      setActiveOceanForecast(selectedOceanForecast);
+    }
+  }, [selectedOceanForecast, oceanLayersReady, oceanLayerEnabled, setActiveOceanForecast]);
+
+  // Sync ocean opacity changes
+  useEffect(() => {
+    setOceanLayerOpacity(oceanOpacity);
+  }, [oceanOpacity, setOceanLayerOpacity]);
+
+  // Cleanup ocean layers when disabled
+  useEffect(() => {
+    if (!oceanLayerEnabled) {
+      cleanupOceanLayers();
+    }
+  }, [oceanLayerEnabled, cleanupOceanLayers]);
+
+  // Reinitialize ocean layers when variable changes
+  useEffect(() => {
+    if (oceanLayerEnabled && selectedOceanVariable?.latest_timestamp) {
+      reinitializeOceanLayers();
+    }
+  }, [selectedOceanVariableId]); // Only trigger on variable ID change
 
   // Fetch tileset metadata and extract bands
   const fetchBands = () => {
@@ -377,6 +484,7 @@ const ParticleApp = () => {
 
   // Track if preloaded layers have been initialized
   const weatherLayerInitializedRef = useRef(false);
+  const oceanLayerInitializedRef = useRef(false);
 
   const handleMapLoad = () => {
     const map = mapRef.current?.getMap();
@@ -416,6 +524,17 @@ const ParticleApp = () => {
       initializeWeatherLayers();
       weatherLayerInitializedRef.current = true;
     }
+
+    // Initialize preloaded ocean layers if metadata is already available
+    if (
+      oceanLayerEnabled &&
+      oceanMetadata &&
+      selectedOceanVariable?.latest_timestamp &&
+      !oceanLayerInitializedRef.current
+    ) {
+      initializeOceanLayers();
+      oceanLayerInitializedRef.current = true;
+    }
   };
 
   // Initialize weather layers when metadata becomes available after map load
@@ -432,6 +551,21 @@ const ParticleApp = () => {
       weatherLayerInitializedRef.current = true;
     }
   }, [weatherMetadata, selectedVariable, weatherLayerEnabled, initializeWeatherLayers]);
+
+  // Initialize ocean layers when metadata becomes available after map load
+  useEffect(() => {
+    const map = mapRef.current?.getMap();
+    if (
+      map &&
+      oceanLayerEnabled &&
+      oceanMetadata &&
+      selectedOceanVariable?.latest_timestamp &&
+      !oceanLayerInitializedRef.current
+    ) {
+      initializeOceanLayers();
+      oceanLayerInitializedRef.current = true;
+    }
+  }, [oceanMetadata, selectedOceanVariable, oceanLayerEnabled, initializeOceanLayers]);
 
   return (
     <div style={{ position: "relative", width: "100%", height: "100vh" }}>
@@ -551,6 +685,99 @@ const ParticleApp = () => {
         {/* Divider */}
         <div className="divider" />
 
+        {/* Ocean Waves Section (GFS-Wave) */}
+        <div className="panel-section">
+          <div className="section-header">
+            <span className="section-title">Ocean Waves</span>
+            <button
+              onClick={() => setOceanLayerEnabled(!oceanLayerEnabled)}
+              className={`toggle-btn ${oceanLayerEnabled ? 'active' : 'inactive'}`}
+            >
+              {oceanLayerEnabled ? "ON" : "OFF"}
+            </button>
+          </div>
+
+          {oceanLoading && !oceanMetadata && (
+            <div className="info-card">Loading ocean data...</div>
+          )}
+
+          {oceanError && !oceanMetadata && (
+            <div className="info-card" style={{ borderColor: 'rgba(244, 67, 54, 0.3)' }}>
+              <span style={{ color: '#f44336' }}>Error loading ocean data</span>
+              <button onClick={refreshOcean} className="refresh-btn" style={{ marginLeft: '8px' }}>
+                Retry
+              </button>
+            </div>
+          )}
+
+          {oceanMetadata && oceanLayerEnabled && (
+            <>
+              {/* Data Freshness */}
+              <div className="info-card">
+                <div className="info-label">Model Run</div>
+                <div className="info-value">
+                  GFS-Wave {oceanMetadata.model_run?.cycle_formatted || "..."}
+                  <span className={`status-badge ${oceanMetadata.data_freshness?.status === "fresh" ? 'fresh' : 'stale'}`}>
+                    {oceanMetadata.data_freshness?.age_minutes < 60
+                      ? `${oceanMetadata.data_freshness?.age_minutes}m ago`
+                      : `${Math.floor(oceanMetadata.data_freshness?.age_minutes / 60)}h ago`}
+                  </span>
+                </div>
+              </div>
+
+              {/* Variable Buttons */}
+              <div className="variable-grid">
+                {oceanMetadata.variables.map((variable) => (
+                  <button
+                    key={variable.id}
+                    onClick={() => setSelectedOceanVariableId(variable.id)}
+                    className={`variable-btn ${selectedOceanVariableId === variable.id ? 'selected' : ''}`}
+                    title={variable.description}
+                  >
+                    <span>{variable.name}</span>
+                    {variable.units && <span className="units">({variable.units})</span>}
+                  </button>
+                ))}
+              </div>
+
+              {/* Forecast Slider for Ocean */}
+              {oceanMetadata.forecast_hours.length > 1 && (
+                <div className="forecast-slider">
+                  <div className="forecast-header">
+                    <span className="forecast-label">Forecast Hour</span>
+                    <span className="forecast-value">F{selectedOceanForecast}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max={oceanMetadata.forecast_hours.length - 1}
+                    value={oceanMetadata.forecast_hours.indexOf(selectedOceanForecast)}
+                    onChange={(e) => setSelectedOceanForecast(oceanMetadata.forecast_hours[parseInt(e.target.value)])}
+                  />
+                </div>
+              )}
+
+              {/* Opacity Slider */}
+              <div className="opacity-section">
+                <div className="opacity-header">
+                  <span className="opacity-label">Layer Opacity</span>
+                  <span className="opacity-value">{Math.round(oceanOpacity * 100)}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={oceanOpacity * 100}
+                  onChange={(e) => setOceanOpacity(parseInt(e.target.value) / 100)}
+                />
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Divider */}
+        <div className="divider" />
+
         {/* Wind Forecast Time Selector */}
         <div className="panel-section wind-section">
           <div className="section-header">
@@ -613,17 +840,42 @@ const ParticleApp = () => {
           variable={selectedVariable}
           modelRun={weatherMetadata?.model_run?.cycle_formatted || null}
           ageMinutes={weatherMetadata?.data_freshness?.age_minutes || -1}
+          modelName="HRRR"
         />
       )}
 
-      {/* Preloading indicator */}
+      {/* Ocean Legend */}
+      {oceanLayerEnabled && selectedOceanVariable && (
+        <div className="ocean-legend">
+          <WeatherLegend
+            variable={selectedOceanVariable}
+            modelRun={oceanMetadata?.model_run?.cycle_formatted || null}
+            ageMinutes={oceanMetadata?.data_freshness?.age_minutes || -1}
+            modelName="GFS-Wave"
+          />
+        </div>
+      )}
+
+      {/* Weather preloading indicator */}
       {weatherLayerEnabled && !weatherLayersReady && weatherTotalCount > 0 && (
         <div className="loading-bar">
           <div className="loading-text">
-            Loading forecasts: {weatherLoadedCount}/{weatherTotalCount}
+            Loading weather forecasts: {weatherLoadedCount}/{weatherTotalCount}
           </div>
           <div className="progress-bar">
             <div className="progress-fill" style={{ width: `${weatherLoadProgress}%` }} />
+          </div>
+        </div>
+      )}
+
+      {/* Ocean preloading indicator */}
+      {oceanLayerEnabled && !oceanLayersReady && oceanTotalCount > 0 && (
+        <div className="loading-bar" style={{ bottom: weatherLayerEnabled && !weatherLayersReady ? '60px' : '20px' }}>
+          <div className="loading-text">
+            Loading ocean forecasts: {oceanLoadedCount}/{oceanTotalCount}
+          </div>
+          <div className="progress-bar">
+            <div className="progress-fill" style={{ width: `${oceanLoadProgress}%` }} />
           </div>
         </div>
       )}

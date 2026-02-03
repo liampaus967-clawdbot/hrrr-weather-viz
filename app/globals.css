@@ -364,6 +364,31 @@ input[type="range"]::-moz-range-thumb {
   color: white;
 }
 
+/* Forecast Slider (for Ocean) */
+.forecast-slider {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.forecast-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.forecast-label {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.forecast-value {
+  font-size: 12px;
+  font-weight: 600;
+  color: white;
+}
+
 /* Divider */
 .divider {
   height: 1px;
@@ -491,6 +516,20 @@ input[type="range"]::-moz-range-thumb {
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   font-size: 11px;
   color: rgba(255, 255, 255, 0.5);
+}
+
+/* Ocean Legend - positioned above weather legend */
+.ocean-legend {
+  position: absolute;
+  bottom: 160px;
+  right: 24px;
+  z-index: 10;
+}
+
+.ocean-legend .weather-legend {
+  position: relative;
+  bottom: auto;
+  right: auto;
 }
 
 /* Loading Indicator */

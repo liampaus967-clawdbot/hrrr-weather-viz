@@ -30,6 +30,8 @@ interface UsePreloadedRasterLayersOptions {
   forecastHours: string[];
   /** Whether the layer system is enabled */
   enabled?: boolean;
+  /** Optional prefix for layer/source IDs (default: "weather") */
+  layerIdPrefix?: string;
 }
 
 interface UsePreloadedRasterLayersResult {
@@ -55,9 +57,6 @@ interface UsePreloadedRasterLayersResult {
   reinitialize: () => void;
 }
 
-const SOURCE_PREFIX = "weather-preload-";
-const LAYER_PREFIX = "weather-layer-";
-
 export function usePreloadedRasterLayers(
   options: UsePreloadedRasterLayersOptions
 ): UsePreloadedRasterLayersResult {
@@ -68,7 +67,11 @@ export function usePreloadedRasterLayers(
     buildTileUrl,
     forecastHours,
     enabled = true,
+    layerIdPrefix = "weather",
   } = options;
+
+  const SOURCE_PREFIX = `${layerIdPrefix}-preload-`;
+  const LAYER_PREFIX = `${layerIdPrefix}-layer-`;
 
   const [activeForecast, setActiveForecastState] = useState<string | null>(null);
   const [isReady, setIsReady] = useState(false);
