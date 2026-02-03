@@ -13,6 +13,13 @@ export const particleSourceTwo: SourceProps = {
   tileSize: 512,
 };
 
+// Vermont resampled wind (4x resolution ~750m)
+export const vermontWindSource: SourceProps = {
+  type: "raster-array",
+  url: "mapbox://onwaterllc.hrrr_wind_resampled",
+  tileSize: 512,
+};
+
 /**
  * Create a dynamic raster source from weather metadata
  * @param metadata - Weather metadata from S3

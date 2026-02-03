@@ -13,12 +13,15 @@ import {
   windMagnitudeLayer,
   createHerbieWindLayer,
   herbieWindMagnitudeLayer,
+  createVermontWindLayer,
+  vermontWindMagnitudeLayer,
   s3BandLayer,
 } from "@/layers/layer";
 import { createWindLayer } from "@/layers/layer-with-time-control";
 import {
   particleSource,
   particleSourceTwo,
+  vermontWindSource,
 } from "@/layers/source";
 import { useWeatherMetadata } from "@/hooks/useWeatherMetadata";
 import type { WeatherVariable, ColorStop } from "@/hooks/useWeatherMetadata";
@@ -152,6 +155,11 @@ const ParticleApp = () => {
   const [herbieWindEnabled, setHerbieWindEnabled] = useState(false);
   const [herbieBandValue, setHerbieBandValue] = useState<string | null>(null);
   const [herbieBandLoaded, setHerbieBandLoaded] = useState(false);
+
+  // State for Vermont resampled wind layer
+  const [vermontWindEnabled, setVermontWindEnabled] = useState(false);
+  const [vermontBandValue, setVermontBandValue] = useState<string | null>(null);
+  const [vermontBandLoaded, setVermontBandLoaded] = useState(false);
 
   // Weather metadata from S3
   const {
@@ -413,6 +421,8 @@ const ParticleApp = () => {
           const sortedBands = [...bands].sort(
             (a, b) => parseInt(a) - parseInt(b)
           );
+          // Filter out bands that are too recent (tiles may still be processing)
+          const oneHourAgo = Date.now() - (60 * 60 * 1000);
           const mappedBands: TimeBand[] = sortedBands
             .map((bandValue, index) => ({
               index,
@@ -420,6 +430,11 @@ const ParticleApp = () => {
               bandValue,
             }))
             .filter((band) => !band.label.includes("00:00 UTC"))
+            // Exclude bands less than 1 hour old to ensure tiles are processed
+            .filter((band) => {
+              const bandTimestamp = parseInt(band.bandValue) * 1000;
+              return bandTimestamp < oneHourAgo;
+            })
             .map((band, newIndex) => ({
               ...band,
               index: newIndex,
@@ -458,7 +473,16 @@ const ParticleApp = () => {
           const sortedBands = [...bands].sort(
             (a, b) => parseInt(a) - parseInt(b)
           );
-          if (sortedBands.length > 0) {
+          // Filter out bands less than 1 hour old to ensure tiles are processed
+          const oneHourAgo = Date.now() - (60 * 60 * 1000);
+          const validBands = sortedBands.filter((bandValue) => {
+            const bandTimestamp = parseInt(bandValue) * 1000;
+            return bandTimestamp < oneHourAgo;
+          });
+          if (validBands.length > 0) {
+            setHerbieBandValue(validBands[0]);
+          } else if (sortedBands.length > 0) {
+            // Fallback to oldest band if all are too recent
             setHerbieBandValue(sortedBands[0]);
           }
         }
@@ -470,9 +494,55 @@ const ParticleApp = () => {
       });
   };
 
+  // Fetch first band from Vermont resampled tileset
+  const fetchVermontBand = () => {
+    const tilesetId = "onwaterllc.hrrr_wind_resampled";
+    const cacheBuster = `&_t=${Date.now()}`;
+    const url = `https://api.mapbox.com/v4/${tilesetId}.json?access_token=${MAPBOX_SECRET_TOKEN}${cacheBuster}`;
+
+    setVermontBandLoaded(false);
+    fetch(url, {
+      cache: "no-cache",
+      headers: {
+        "Cache-Control": "no-cache",
+      },
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch Vermont tileset metadata");
+        return res.json();
+      })
+      .then((data) => {
+        const rasterLayer = data.raster_layers?.[0];
+        if (rasterLayer?.fields?.bands) {
+          const bands: string[] = rasterLayer.fields.bands;
+          const sortedBands = [...bands].sort(
+            (a, b) => parseInt(a) - parseInt(b)
+          );
+          // Filter out bands less than 1 hour old to ensure tiles are processed
+          const oneHourAgo = Date.now() - (60 * 60 * 1000);
+          const validBands = sortedBands.filter((bandValue) => {
+            const bandTimestamp = parseInt(bandValue) * 1000;
+            return bandTimestamp < oneHourAgo;
+          });
+          if (validBands.length > 0) {
+            setVermontBandValue(validBands[0]);
+          } else if (sortedBands.length > 0) {
+            // Fallback to oldest band if all are too recent
+            setVermontBandValue(sortedBands[0]);
+          }
+        }
+        setVermontBandLoaded(true);
+      })
+      .catch((err) => {
+        console.error("Error fetching Vermont tileset metadata:", err);
+        setVermontBandLoaded(true);
+      });
+  };
+
   useEffect(() => {
     fetchBands();
     fetchHerbieBand();
+    fetchVermontBand();
   }, [refreshKey]);
 
   const refreshBands = () => {
@@ -594,6 +664,13 @@ const ParticleApp = () => {
           <Source {...particleSourceTwo}>
             <Layer {...herbieWindMagnitudeLayer} />
             <Layer {...createHerbieWindLayer(herbieBandValue)} />
+          </Source>
+        )}
+
+        {vermontWindEnabled && vermontBandValue && (
+          <Source {...vermontWindSource}>
+            <Layer {...vermontWindMagnitudeLayer} />
+            <Layer {...createVermontWindLayer(vermontBandValue)} />
           </Source>
         )}
       </Map>
@@ -796,6 +873,19 @@ const ParticleApp = () => {
             <span>Animated Wind</span>
             <span className={`wind-status ${herbieWindEnabled ? 'on' : 'off'}`}>
               {herbieWindEnabled ? "ON" : "OFF"}
+            </span>
+          </button>
+
+          {/* Vermont Wind Resampled Toggle */}
+          <button
+            onClick={() => setVermontWindEnabled(!vermontWindEnabled)}
+            disabled={!vermontBandLoaded || !vermontBandValue}
+            className={`wind-btn ${vermontWindEnabled ? 'active' : ''}`}
+            style={{ marginTop: '8px' }}
+          >
+            <span>🏔️ Vermont Wind (4x)</span>
+            <span className={`wind-status ${vermontWindEnabled ? 'on' : 'off'}`}>
+              {vermontWindEnabled ? "ON" : "OFF"}
             </span>
           </button>
 
