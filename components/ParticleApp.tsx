@@ -460,14 +460,16 @@ const ParticleApp = () => {
   // Fetch first band from Herbie tileset
   const fetchHerbieBand = () => {
     const tilesetId = "onwaterllc.wind-hrrr-herbie-48h";
-    const cacheBuster = `&_t=${Date.now()}`;
+    const cacheBuster = `&_t=${Date.now()}&_r=${Math.random()}`;
     const url = `https://api.mapbox.com/v4/${tilesetId}.json?access_token=${MAPBOX_SECRET_TOKEN}${cacheBuster}`;
 
     setHerbieBandLoaded(false);
+    setHerbieBandValue(null); // Clear old value immediately
     fetch(url, {
-      cache: "no-cache",
+      cache: "no-store",
       headers: {
-        "Cache-Control": "no-cache",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
       },
     })
       .then((res) => {
@@ -505,14 +507,16 @@ const ParticleApp = () => {
   // Fetch first band from Vermont resampled tileset
   const fetchVermontBand = () => {
     const tilesetId = "onwaterllc.hrrr_wind_resampled";
-    const cacheBuster = `&_t=${Date.now()}`;
+    const cacheBuster = `&_t=${Date.now()}&_r=${Math.random()}`;
     const url = `https://api.mapbox.com/v4/${tilesetId}.json?access_token=${MAPBOX_SECRET_TOKEN}${cacheBuster}`;
 
     setVermontBandLoaded(false);
+    setVermontBandValue(null); // Clear old value immediately
     fetch(url, {
-      cache: "no-cache",
+      cache: "no-store",
       headers: {
-        "Cache-Control": "no-cache",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
       },
     })
       .then((res) => {
@@ -550,14 +554,16 @@ const ParticleApp = () => {
   // Fetch band from TBOFS ocean currents tileset
   const fetchTbofsBand = () => {
     const tilesetId = "onwaterllc.tbofs_currents";
-    const cacheBuster = `&_t=${Date.now()}`;
+    const cacheBuster = `&_t=${Date.now()}&_r=${Math.random()}`;
     const url = `https://api.mapbox.com/v4/${tilesetId}.json?access_token=${MAPBOX_SECRET_TOKEN}${cacheBuster}`;
 
     setTbofsCurrentBandLoaded(false);
+    setTbofsCurrentBandValue(null); // Clear old value immediately
     fetch(url, {
-      cache: "no-cache",
+      cache: "no-store",
       headers: {
-        "Cache-Control": "no-cache",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
       },
     })
       .then((res) => {
@@ -591,6 +597,15 @@ const ParticleApp = () => {
   }, [refreshKey]);
 
   const refreshBands = () => {
+    // Clear all cached band values first
+    setHerbieBandValue(null);
+    setVermontBandValue(null);
+    setTbofsCurrentBandValue(null);
+    // Disable layers to prevent errors
+    setHerbieWindEnabled(false);
+    setVermontWindEnabled(false);
+    setTbofsCurrentEnabled(false);
+    // Trigger re-fetch
     setRefreshKey((prev) => prev + 1);
   };
 
