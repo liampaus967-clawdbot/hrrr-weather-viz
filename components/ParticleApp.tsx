@@ -192,7 +192,7 @@ const ParticleApp = () => {
   const [oceanOpacity, setOceanOpacity] = useState<number>(0.7);
 
   // State for S3 weather layer
-  const [weatherLayerEnabled, setWeatherLayerEnabled] = useState(true);
+  const [weatherLayerEnabled, setWeatherLayerEnabled] = useState(false);
   const [selectedVariableId, setSelectedVariableId] = useState<string | null>(
     null
   );
