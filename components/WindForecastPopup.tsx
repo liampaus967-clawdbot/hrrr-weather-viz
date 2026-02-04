@@ -200,7 +200,7 @@ const WindForecastPopup: React.FC<WindForecastPopupProps> = ({ latitude, longitu
             {/* Hourly Forecast */}
             <div style={styles.forecastSection}>
               <div style={styles.forecastTitle}>24-Hour Wind Forecast</div>
-              <div style={styles.forecastScroll}>
+              <div style={styles.forecastScroll} className="wind-forecast-scroll">
                 {next24Hours?.time.slice(0, 24).map((time, i) => {
                   const speed = next24Hours.wind_speed_10m[i];
                   const direction = next24Hours.wind_direction_10m[i];
@@ -436,7 +436,9 @@ const styles: { [key: string]: React.CSSProperties } = {
     display: 'flex',
     gap: '8px',
     overflowX: 'auto',
-    paddingBottom: '8px',
+    paddingBottom: '4px',
+    scrollbarWidth: 'thin',
+    scrollbarColor: 'rgba(255, 255, 255, 0.2) transparent',
   },
   forecastItem: {
     display: 'flex',
@@ -481,12 +483,27 @@ const styles: { [key: string]: React.CSSProperties } = {
   },
 };
 
-// Add keyframes for spinner animation
+// Add keyframes for spinner animation and custom scrollbar styles
 if (typeof document !== 'undefined') {
   const styleSheet = document.createElement('style');
   styleSheet.textContent = `
     @keyframes spin {
       to { transform: rotate(360deg); }
+    }
+    
+    /* Custom scrollbar for webkit browsers */
+    .wind-forecast-scroll::-webkit-scrollbar {
+      height: 6px;
+    }
+    .wind-forecast-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .wind-forecast-scroll::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 3px;
+    }
+    .wind-forecast-scroll::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.25);
     }
   `;
   document.head.appendChild(styleSheet);

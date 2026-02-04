@@ -13,8 +13,10 @@ import {
   windMagnitudeLayer,
   createHerbieWindLayer,
   herbieWindMagnitudeLayer,
-  createVermontWindLayer,
-  vermontWindMagnitudeLayer,
+  createNortheastWindLayer,
+  northeastWindMagnitudeLayer,
+  createSoutheastWindLayer,
+  southeastWindMagnitudeLayer,
   createTbofsCurrentLayer,
   tbofsCurrentMagnitudeLayer,
   s3BandLayer,
@@ -23,7 +25,8 @@ import { createWindLayer } from "@/layers/layer-with-time-control";
 import {
   particleSource,
   particleSourceTwo,
-  vermontWindSource,
+  northeastWindSource,
+  southeastWindSource,
   tbofsCurrentSource,
 } from "@/layers/source";
 import { useWeatherMetadata } from "@/hooks/useWeatherMetadata";
@@ -160,10 +163,15 @@ const ParticleApp = () => {
   const [herbieBandValue, setHerbieBandValue] = useState<string | null>(null);
   const [herbieBandLoaded, setHerbieBandLoaded] = useState(false);
 
-  // State for Vermont resampled wind layer
-  const [vermontWindEnabled, setVermontWindEnabled] = useState(false);
-  const [vermontBandValue, setVermontBandValue] = useState<string | null>(null);
-  const [vermontBandLoaded, setVermontBandLoaded] = useState(false);
+  // State for Northeast resampled wind layer
+  const [northeastWindEnabled, setNortheastWindEnabled] = useState(false);
+  const [northeastBandValue, setNortheastBandValue] = useState<string | null>(null);
+  const [northeastBandLoaded, setNortheastBandLoaded] = useState(false);
+
+  // State for Southeast resampled wind layer
+  const [southeastWindEnabled, setSoutheastWindEnabled] = useState(false);
+  const [southeastBandValue, setSoutheastBandValue] = useState<string | null>(null);
+  const [southeastBandLoaded, setSoutheastBandLoaded] = useState(false);
 
   // State for TBOFS ocean currents particle layer
   const [tbofsCurrentEnabled, setTbofsCurrentEnabled] = useState(false);
@@ -508,14 +516,14 @@ const ParticleApp = () => {
       });
   };
 
-  // Fetch first band from Vermont resampled tileset
-  const fetchVermontBand = () => {
-    const tilesetId = "onwaterllc.hrrr_wind_resampled";
+  // Fetch first band from Northeast resampled tileset
+  const fetchNortheastBand = () => {
+    const tilesetId = "onwaterllc.hrrr_wind_northeast";
     const cacheBuster = `&_t=${Date.now()}&_r=${Math.random()}`;
     const url = `https://api.mapbox.com/v4/${tilesetId}.json?access_token=${MAPBOX_SECRET_TOKEN}${cacheBuster}`;
 
-    setVermontBandLoaded(false);
-    setVermontBandValue(null); // Clear old value immediately
+    setNortheastBandLoaded(false);
+    setNortheastBandValue(null);
     fetch(url, {
       cache: "no-store",
       headers: {
@@ -524,7 +532,7 @@ const ParticleApp = () => {
       },
     })
       .then((res) => {
-        if (!res.ok) throw new Error("Failed to fetch Vermont tileset metadata");
+        if (!res.ok) throw new Error("Failed to fetch Northeast tileset metadata");
         return res.json();
       })
       .then((data) => {
@@ -534,24 +542,67 @@ const ParticleApp = () => {
           const sortedBands = [...bands].sort(
             (a, b) => parseInt(a) - parseInt(b)
           );
-          // Filter out bands less than 1 hour old to ensure tiles are processed
           const oneHourAgo = Date.now() - (60 * 60 * 1000);
           const validBands = sortedBands.filter((bandValue) => {
             const bandTimestamp = parseInt(bandValue) * 1000;
             return bandTimestamp < oneHourAgo;
           });
           if (validBands.length > 0) {
-            setVermontBandValue(validBands[0]);
+            setNortheastBandValue(validBands[0]);
           } else if (sortedBands.length > 0) {
-            // Fallback to oldest band if all are too recent
-            setVermontBandValue(sortedBands[0]);
+            setNortheastBandValue(sortedBands[0]);
           }
         }
-        setVermontBandLoaded(true);
+        setNortheastBandLoaded(true);
       })
       .catch((err) => {
-        console.error("Error fetching Vermont tileset metadata:", err);
-        setVermontBandLoaded(true);
+        console.error("Error fetching Northeast tileset metadata:", err);
+        setNortheastBandLoaded(true);
+      });
+  };
+
+  // Fetch first band from Southeast resampled tileset
+  const fetchSoutheastBand = () => {
+    const tilesetId = "onwaterllc.hrrr_wind_southeast";
+    const cacheBuster = `&_t=${Date.now()}&_r=${Math.random()}`;
+    const url = `https://api.mapbox.com/v4/${tilesetId}.json?access_token=${MAPBOX_SECRET_TOKEN}${cacheBuster}`;
+
+    setSoutheastBandLoaded(false);
+    setSoutheastBandValue(null);
+    fetch(url, {
+      cache: "no-store",
+      headers: {
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
+      },
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch Southeast tileset metadata");
+        return res.json();
+      })
+      .then((data) => {
+        const rasterLayer = data.raster_layers?.[0];
+        if (rasterLayer?.fields?.bands) {
+          const bands: string[] = rasterLayer.fields.bands;
+          const sortedBands = [...bands].sort(
+            (a, b) => parseInt(a) - parseInt(b)
+          );
+          const oneHourAgo = Date.now() - (60 * 60 * 1000);
+          const validBands = sortedBands.filter((bandValue) => {
+            const bandTimestamp = parseInt(bandValue) * 1000;
+            return bandTimestamp < oneHourAgo;
+          });
+          if (validBands.length > 0) {
+            setSoutheastBandValue(validBands[0]);
+          } else if (sortedBands.length > 0) {
+            setSoutheastBandValue(sortedBands[0]);
+          }
+        }
+        setSoutheastBandLoaded(true);
+      })
+      .catch((err) => {
+        console.error("Error fetching Southeast tileset metadata:", err);
+        setSoutheastBandLoaded(true);
       });
   };
 
@@ -596,18 +647,21 @@ const ParticleApp = () => {
   useEffect(() => {
     fetchBands();
     fetchHerbieBand();
-    fetchVermontBand();
+    fetchNortheastBand();
+    fetchSoutheastBand();
     fetchTbofsBand();
   }, [refreshKey]);
 
   const refreshBands = () => {
     // Clear all cached band values first
     setHerbieBandValue(null);
-    setVermontBandValue(null);
+    setNortheastBandValue(null);
+    setSoutheastBandValue(null);
     setTbofsCurrentBandValue(null);
     // Disable layers to prevent errors
     setHerbieWindEnabled(false);
-    setVermontWindEnabled(false);
+    setNortheastWindEnabled(false);
+    setSoutheastWindEnabled(false);
     setTbofsCurrentEnabled(false);
     // Trigger re-fetch
     setRefreshKey((prev) => prev + 1);
@@ -701,10 +755,10 @@ const ParticleApp = () => {
     }
   }, [oceanMetadata, selectedOceanVariable, oceanLayerEnabled, initializeOceanLayers]);
 
-  // Update Vermont wind layer particle count based on zoom level
+  // Update regional wind layer particle count based on zoom level
   useEffect(() => {
     const map = mapRef.current?.getMap();
-    if (!map || !vermontWindEnabled) return;
+    if (!map || (!northeastWindEnabled && !southeastWindEnabled)) return;
 
     const updateParticleCount = () => {
       const zoom = map.getZoom();
@@ -714,31 +768,27 @@ const ParticleApp = () => {
       if (zoom < 3) {
         particleCount = 4000;
       } else if (zoom < 5) {
-        // Linear interpolation between zoom 3 and 5
-        particleCount = 4000 + ((zoom - 3) / 2) * 4000; // 4000 to 8000
+        particleCount = 4000 + ((zoom - 3) / 2) * 4000;
       } else if (zoom < 7) {
-        // Linear interpolation between zoom 5 and 7
-        particleCount = 8000 + ((zoom - 5) / 2) * 8000; // 8000 to 16000
+        particleCount = 8000 + ((zoom - 5) / 2) * 8000;
       } else if (zoom < 9) {
-        // Linear interpolation between zoom 7 and 9
-        particleCount = 16000 + ((zoom - 7) / 2) * 8000; // 16000 to 24000
+        particleCount = 16000 + ((zoom - 7) / 2) * 8000;
       } else if (zoom < 11) {
-        // Linear interpolation between zoom 9 and 11
-        particleCount = 24000 + ((zoom - 9) / 2) * 8000; // 24000 to 32000
+        particleCount = 24000 + ((zoom - 9) / 2) * 8000;
       } else {
         particleCount = 32000;
       }
 
-      // Update the layer if it exists
-      if (map.getLayer("vermont-wind-layer")) {
-        map.setPaintProperty("vermont-wind-layer", "raster-particle-count", Math.round(particleCount));
+      // Update layers if they exist
+      if (map.getLayer("northeast-wind-layer")) {
+        map.setPaintProperty("northeast-wind-layer", "raster-particle-count", Math.round(particleCount));
+      }
+      if (map.getLayer("southeast-wind-layer")) {
+        map.setPaintProperty("southeast-wind-layer", "raster-particle-count", Math.round(particleCount));
       }
     };
 
-    // Update immediately
     updateParticleCount();
-
-    // Listen to zoom changes
     map.on("zoom", updateParticleCount);
     map.on("zoomend", updateParticleCount);
 
@@ -746,7 +796,7 @@ const ParticleApp = () => {
       map.off("zoom", updateParticleCount);
       map.off("zoomend", updateParticleCount);
     };
-  }, [vermontWindEnabled, mapRef]);
+  }, [northeastWindEnabled, southeastWindEnabled, mapRef]);
 
   return (
     <div style={{ position: "relative", width: "100%", height: "100vh" }}>
@@ -782,10 +832,17 @@ const ParticleApp = () => {
           </Source>
         )}
 
-        {vermontWindEnabled && vermontBandValue && (
-          <Source {...vermontWindSource}>
-            <Layer {...vermontWindMagnitudeLayer} />
-            <Layer {...createVermontWindLayer(vermontBandValue)} />
+        {northeastWindEnabled && northeastBandValue && (
+          <Source {...northeastWindSource}>
+            <Layer {...northeastWindMagnitudeLayer} />
+            <Layer {...createNortheastWindLayer(northeastBandValue)} />
+          </Source>
+        )}
+
+        {southeastWindEnabled && southeastBandValue && (
+          <Source {...southeastWindSource}>
+            <Layer {...southeastWindMagnitudeLayer} />
+            <Layer {...createSoutheastWindLayer(southeastBandValue)} />
           </Source>
         )}
 
@@ -1012,16 +1069,29 @@ const ParticleApp = () => {
             </span>
           </button>
 
-          {/* Vermont Wind Resampled Toggle */}
+          {/* Northeast Wind Resampled Toggle */}
           <button
-            onClick={() => setVermontWindEnabled(!vermontWindEnabled)}
-            disabled={!vermontBandLoaded || !vermontBandValue}
-            className={`wind-btn ${vermontWindEnabled ? 'active' : ''}`}
+            onClick={() => setNortheastWindEnabled(!northeastWindEnabled)}
+            disabled={!northeastBandLoaded || !northeastBandValue}
+            className={`wind-btn ${northeastWindEnabled ? 'active' : ''}`}
             style={{ marginTop: '8px' }}
           >
-            <span>🏔️ Vermont Wind (4x)</span>
-            <span className={`wind-status ${vermontWindEnabled ? 'on' : 'off'}`}>
-              {vermontWindEnabled ? "ON" : "OFF"}
+            <span>🏔️ Northeast Wind</span>
+            <span className={`wind-status ${northeastWindEnabled ? 'on' : 'off'}`}>
+              {northeastWindEnabled ? "ON" : "OFF"}
+            </span>
+          </button>
+
+          {/* Southeast Wind Resampled Toggle */}
+          <button
+            onClick={() => setSoutheastWindEnabled(!southeastWindEnabled)}
+            disabled={!southeastBandLoaded || !southeastBandValue}
+            className={`wind-btn ${southeastWindEnabled ? 'active' : ''}`}
+            style={{ marginTop: '8px' }}
+          >
+            <span>🌴 Southeast Wind</span>
+            <span className={`wind-status ${southeastWindEnabled ? 'on' : 'off'}`}>
+              {southeastWindEnabled ? "ON" : "OFF"}
             </span>
           </button>
 

@@ -197,11 +197,11 @@ export const herbieWindMagnitudeLayer: LayerProps = {
 };
 
 /**
- * Create Vermont resampled wind layer with a specific band value
+ * Create Northeast resampled wind layer with a specific band value
  * @param bandValue - The band timestamp string from the tileset
  */
-export const createVermontWindLayer = (bandValue: string | null): LayerProps => {
-  console.log("Creating Vermont wind layer with band:", bandValue);
+export const createNortheastWindLayer = (bandValue: string | null): LayerProps => {
+  console.log("Creating Northeast wind layer with band:", bandValue);
 
   // Build paint object dynamically
   const paint: any = {
@@ -281,17 +281,117 @@ export const createVermontWindLayer = (bandValue: string | null): LayerProps => 
   }
 
   return {
-    id: "vermont-wind-layer",
+    id: "northeast-wind-layer",
     type: "raster-particle",
-    source: "vermontWindSource",
+    source: "northeastWindSource",
     paint,
   };
 };
 
-export const vermontWindMagnitudeLayer: LayerProps = {
-  id: "vermont-wind_u",
+export const northeastWindMagnitudeLayer: LayerProps = {
+  id: "northeast-wind_u",
   type: "raster",
-  source: "vermontWindSource",
+  source: "northeastWindSource",
+  paint: {
+    "raster-opacity": 0,
+    "raster-fade-duration": 0,
+  },
+};
+
+/**
+ * Create Southeast resampled wind layer with a specific band value
+ * @param bandValue - The band timestamp string from the tileset
+ */
+export const createSoutheastWindLayer = (bandValue: string | null): LayerProps => {
+  console.log("Creating Southeast wind layer with band:", bandValue);
+
+  const paint: any = {
+    "raster-particle-speed-factor": 0.6,
+    "raster-particle-fade-opacity-factor": 0.85,
+    "raster-particle-reset-rate-factor": 0.3,
+    "raster-particle-count": 16000,
+    "raster-particle-max-speed": 40,
+    "raster-particle-color": [
+        "interpolate",
+        ["linear"],
+        ["raster-particle-speed"],
+        1.5,
+        "rgba(100,200,255,256)",
+        2.5,
+        "rgba(50,150,255,256)",
+        4.12,
+        "rgba(0,200,255,256)",
+        4.63,
+        "rgba(0,200,255,256)",
+        6.17,
+        "rgba(0,255,200,256)",
+        7.72,
+        "rgba(0,255,200,256)",
+        9.26,
+        "rgba(0,255,100,256)",
+        10.29,
+        "rgba(0,255,100,256)",
+        11.83,
+        "rgba(255,200,0,256)",
+        13.37,
+        "rgba(255,180,0,256)",
+        14.92,
+        "rgba(255,120,0,256)",
+        16.46,
+        "rgba(255,120,0,256)",
+        18.0,
+        "rgba(255,50,50,256)",
+        20.06,
+        "rgba(255,0,100,256)",
+        21.6,
+        "rgba(255,0,150,256)",
+        23.66,
+        "rgba(255,0,150,256)",
+        25.21,
+        "rgba(200,0,255,256)",
+        27.78,
+        "rgba(200,0,255,256)",
+        29.32,
+        "rgba(150,0,255,256)",
+        31.89,
+        "rgba(150,0,255,256)",
+        33.44,
+        "rgba(100,255,200,256)",
+        42.18,
+        "rgba(100,255,200,256)",
+        43.72,
+        "rgba(255,255,100,256)",
+        48.87,
+        "rgba(255,255,100,256)",
+        50.41,
+        "rgba(255,255,255,256)",
+        57.61,
+        "rgba(255,255,255,256)",
+        59.16,
+        "rgba(0,255,255,256)",
+        68.93,
+        "rgba(0,255,255,256)",
+        69.44,
+        "rgba(255,0,255,256)",
+      ],
+  };
+
+  if (bandValue) {
+    paint["raster-particle-array-band"] = String(bandValue);
+  }
+
+  return {
+    id: "southeast-wind-layer",
+    type: "raster-particle",
+    source: "southeastWindSource",
+    paint,
+  };
+};
+
+export const southeastWindMagnitudeLayer: LayerProps = {
+  id: "southeast-wind_u",
+  type: "raster",
+  source: "southeastWindSource",
   paint: {
     "raster-opacity": 0,
     "raster-fade-duration": 0,

@@ -13,10 +13,17 @@ export const particleSourceTwo: SourceProps = {
   tileSize: 512,
 };
 
-// Vermont resampled wind (4x resolution ~750m)
-export const vermontWindSource: SourceProps = {
+// Northeast resampled wind (6x resolution ~500m)
+export const northeastWindSource: SourceProps = {
   type: "raster-array",
   url: "mapbox://onwaterllc.hrrr_wind_northeast",
+  tileSize: 4096,
+};
+
+// Southeast resampled wind (6x resolution ~500m)
+export const southeastWindSource: SourceProps = {
+  type: "raster-array",
+  url: "mapbox://onwaterllc.hrrr_wind_southeast",
   tileSize: 4096,
 };
 
