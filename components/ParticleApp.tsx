@@ -31,6 +31,7 @@ import type { WeatherVariable, ColorStop } from "@/hooks/useWeatherMetadata";
 import { useGfsWaveMetadata } from "@/hooks/useGfsWaveMetadata";
 import type { WaveVariable } from "@/hooks/useGfsWaveMetadata";
 import ForecastAnimationController from "@/components/ForecastAnimationController";
+import WindForecastPopup from "@/components/WindForecastPopup";
 import { useTilePreloader } from "@/hooks/useTilePreloader";
 import { usePreloadedRasterLayers } from "@/hooks/usePreloadedRasterLayers";
 
@@ -193,6 +194,9 @@ const ParticleApp = () => {
 
   // State for S3 weather layer
   const [weatherLayerEnabled, setWeatherLayerEnabled] = useState(false);
+  
+  // Wind forecast popup state
+  const [forecastPopup, setForecastPopup] = useState<{ lat: number; lng: number } | null>(null);
   const [selectedVariableId, setSelectedVariableId] = useState<string | null>(
     null
   );
@@ -706,6 +710,10 @@ const ParticleApp = () => {
         mapStyle={mapStyle}
         mapboxAccessToken={MAPBOX_TOKEN}
         onLoad={handleMapLoad}
+        onClick={(e) => {
+          // Open wind forecast popup on map click
+          setForecastPopup({ lat: e.lngLat.lat, lng: e.lngLat.lng });
+        }}
       >
         <NavigationControl position="top-right" />
 
@@ -1049,6 +1057,15 @@ const ParticleApp = () => {
             <div className="progress-fill" style={{ width: `${oceanLoadProgress}%` }} />
           </div>
         </div>
+      )}
+
+      {/* Wind Forecast Popup - Click anywhere on map */}
+      {forecastPopup && (
+        <WindForecastPopup
+          latitude={forecastPopup.lat}
+          longitude={forecastPopup.lng}
+          onClose={() => setForecastPopup(null)}
+        />
       )}
     </div>
   );
