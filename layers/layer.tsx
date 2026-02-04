@@ -200,22 +200,17 @@ export const herbieWindMagnitudeLayer: LayerProps = {
  * Create Vermont resampled wind layer with a specific band value
  * @param bandValue - The band timestamp string from the tileset
  */
-export const createVermontWindLayer = (bandValue: string): LayerProps => {
-  const band = String(bandValue);
-  console.log("Creating Vermont wind layer with band:", band);
+export const createVermontWindLayer = (bandValue: string | null): LayerProps => {
+  console.log("Creating Vermont wind layer with band:", bandValue);
 
-  return {
-    id: "vermont-wind-layer",
-    type: "raster-particle",
-    source: "vermontWindSource",
-    paint: {
-      "raster-particle-array-band": band,
-      "raster-particle-speed-factor": 0.6,
-      "raster-particle-fade-opacity-factor": 0.85,
-      "raster-particle-reset-rate-factor": 0.3,
-      "raster-particle-count": 16000, // More particles for higher res
-      "raster-particle-max-speed": 40,
-      "raster-particle-color": [
+  // Build paint object dynamically
+  const paint: any = {
+    "raster-particle-speed-factor": 0.6,
+    "raster-particle-fade-opacity-factor": 0.85,
+    "raster-particle-reset-rate-factor": 0.3,
+    "raster-particle-count": 16000,
+    "raster-particle-max-speed": 40,
+    "raster-particle-color": [
         "interpolate",
         ["linear"],
         ["raster-particle-speed"],
@@ -278,7 +273,18 @@ export const createVermontWindLayer = (bandValue: string): LayerProps => {
         69.44,
         "rgba(255,0,255,256)", // Bright magenta
       ],
-    },
+  };
+
+  // Only add band if we have a valid value (allows fallback to first band)
+  if (bandValue) {
+    paint["raster-particle-array-band"] = String(bandValue);
+  }
+
+  return {
+    id: "vermont-wind-layer",
+    type: "raster-particle",
+    source: "vermontWindSource",
+    paint,
   };
 };
 
