@@ -112,6 +112,7 @@ export const createHerbieWindLayer = (bandValue: string): LayerProps => {
     id: "herbie-wind-layer",
     type: "raster-particle",
     source: "particleSourceTwo",
+    maxzoom: 7, // Stop showing at zoom level 7
     paint: {
       "raster-particle-array-band": band,
       "raster-particle-speed-factor": 0.4,
@@ -124,63 +125,63 @@ export const createHerbieWindLayer = (bandValue: string): LayerProps => {
         ["linear"],
         ["raster-particle-speed"],
         1.5,
-        "rgba(134,163,171,256)",
+        "rgba(100,200,255,256)", // Bright cyan-blue
         2.5,
-        "rgba(126,152,188,256)",
+        "rgba(50,150,255,256)", // Vibrant blue
         4.12,
-        "rgba(110,143,208,256)",
+        "rgba(0,200,255,256)", // Bright sky blue
         4.63,
-        "rgba(110,143,208,256)",
+        "rgba(0,200,255,256)", // Bright sky blue
         6.17,
-        "rgba(15,147,167,256)",
+        "rgba(0,255,200,256)", // Bright turquoise
         7.72,
-        "rgba(15,147,167,256)",
+        "rgba(0,255,200,256)", // Bright turquoise
         9.26,
-        "rgba(57,163,57,256)",
+        "rgba(0,255,100,256)", // Bright green
         10.29,
-        "rgba(57,163,57,256)",
+        "rgba(0,255,100,256)", // Bright green
         11.83,
-        "rgba(194,134,62,256)",
+        "rgba(255,200,0,256)", // Bright yellow-orange
         13.37,
-        "rgba(194,134,63,256)",
+        "rgba(255,180,0,256)", // Bright orange
         14.92,
-        "rgba(200,66,13,256)",
+        "rgba(255,120,0,256)", // Vibrant orange-red
         16.46,
-        "rgba(200,66,13,256)",
+        "rgba(255,120,0,256)", // Vibrant orange-red
         18.0,
-        "rgba(210,0,50,256)",
+        "rgba(255,50,50,256)", // Bright red
         20.06,
-        "rgba(215,0,50,256)",
+        "rgba(255,0,100,256)", // Bright pink-red
         21.6,
-        "rgba(175,80,136,256)",
+        "rgba(255,0,150,256)", // Bright magenta
         23.66,
-        "rgba(175,80,136,256)",
+        "rgba(255,0,150,256)", // Bright magenta
         25.21,
-        "rgba(117,74,147,256)",
+        "rgba(200,0,255,256)", // Bright purple
         27.78,
-        "rgba(117,74,147,256)",
+        "rgba(200,0,255,256)", // Bright purple
         29.32,
-        "rgba(68,105,141,256)",
+        "rgba(150,0,255,256)", // Bright violet
         31.89,
-        "rgba(68,105,141,256)",
+        "rgba(150,0,255,256)", // Bright violet
         33.44,
-        "rgba(194,251,119,256)",
+        "rgba(100,255,200,256)", // Bright mint
         42.18,
-        "rgba(194,251,119,256)",
+        "rgba(100,255,200,256)", // Bright mint
         43.72,
-        "rgba(241,255,109,256)",
+        "rgba(255,255,100,256)", // Bright yellow
         48.87,
-        "rgba(241,255,109,256)",
+        "rgba(255,255,100,256)", // Bright yellow
         50.41,
-        "rgba(256,256,256,256)",
+        "rgba(255,255,255,256)", // White
         57.61,
-        "rgba(256,256,256,256)",
+        "rgba(255,255,255,256)", // White
         59.16,
-        "rgba(0,256,256,256)",
+        "rgba(0,255,255,256)", // Bright cyan
         68.93,
-        "rgba(0,256,256,256)",
+        "rgba(0,255,255,256)", // Bright cyan
         69.44,
-        "rgba(256,37,256,256)",
+        "rgba(255,0,255,256)", // Bright magenta
       ],
     },
   };
@@ -190,6 +191,7 @@ export const herbieWindMagnitudeLayer: LayerProps = {
   id: "herbie-wind_u",
   type: "raster",
   source: "particleSourceTwo",
+  maxzoom: 7, // Stop showing at zoom level 7
   paint: {
     "raster-opacity": 0,
     "raster-fade-duration": 0,
