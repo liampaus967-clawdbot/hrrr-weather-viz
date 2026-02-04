@@ -29,7 +29,6 @@ import {
 } from "@/layers/layer";
 import { createWindLayer } from "@/layers/layer-with-time-control";
 import {
-  particleSource,
   particleSourceTwo,
   northeastWindSource,
   southeastWindSource,
@@ -441,17 +440,18 @@ const ParticleApp = () => {
     }
   }, [selectedOceanVariableId]); // Only trigger on variable ID change
 
-  // Fetch tileset metadata and extract bands
+  // Fetch tileset metadata and extract bands for National Wind Layer (Herbie 48h)
   const fetchBands = () => {
-    const tilesetId = "onwaterllc.wind-hrrr-daily-two";
-    const cacheBuster = `&_t=${Date.now()}`;
+    const tilesetId = "onwaterllc.wind-hrrr-herbie-48h";
+    const cacheBuster = `&_t=${Date.now()}&_r=${Math.random()}`;
     const url = `https://api.mapbox.com/v4/${tilesetId}.json?access_token=${MAPBOX_SECRET_TOKEN}${cacheBuster}`;
 
     setBandsLoaded(false);
     fetch(url, {
-      cache: "no-cache",
+      cache: "no-store",
       headers: {
-        "Cache-Control": "no-cache",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
       },
     })
       .then((res) => {
@@ -473,8 +473,6 @@ const ParticleApp = () => {
               label: formatUnixToUTC(bandValue),
               bandValue,
             }))
-            .filter((band) => !band.label.includes("00:00 UTC"))
-            // Exclude bands less than 1 hour old to ensure tiles are processed
             .filter((band) => {
               const bandTimestamp = parseInt(band.bandValue) * 1000;
               return bandTimestamp < oneHourAgo;
@@ -484,12 +482,19 @@ const ParticleApp = () => {
               index: newIndex,
             }));
           setTimeBands(mappedBands);
+          // Auto-select first band for Herbie layer
+          if (mappedBands.length > 0) {
+            setHerbieBandValue(mappedBands[0].bandValue);
+            setSelectedTimeSlice(0);
+          }
         }
         setBandsLoaded(true);
+        setHerbieBandLoaded(true);
       })
       .catch((err) => {
         console.error("Error fetching tileset metadata:", err);
         setBandsLoaded(true);
+        setHerbieBandLoaded(true);
       });
   };
 
@@ -732,8 +737,7 @@ const ParticleApp = () => {
   };
 
   useEffect(() => {
-    fetchBands();
-    fetchHerbieBand();
+    fetchBands(); // Now fetches National Wind Layer (Herbie 48h) bands
     fetchNortheastBand();
     fetchSoutheastBand();
     fetchNorthwestBand();
@@ -906,13 +910,7 @@ const ParticleApp = () => {
         {/* All forecast hours are pre-loaded as separate layers for instant transitions */}
 
         {/* Wind Particle Layers */}
-        {selectedBand && (
-          <Source {...particleSource}>
-            <Layer {...windMagnitudeLayer} />
-            <Layer {...createWindLayer(selectedBand.bandValue)} />
-          </Source>
-        )}
-
+        {/* National Wind Layer (Herbie 48h) */}
         {herbieWindEnabled && herbieBandValue && (
           <Source {...particleSourceTwo}>
             <Layer {...herbieWindMagnitudeLayer} />
@@ -1166,13 +1164,13 @@ const ParticleApp = () => {
             </button>
           </div>
 
-          {/* Wind Toggle */}
+          {/* National Wind Layer Toggle */}
           <button
             onClick={() => setHerbieWindEnabled(!herbieWindEnabled)}
             disabled={!herbieBandLoaded || !herbieBandValue}
             className={`wind-btn ${herbieWindEnabled ? 'active' : ''}`}
           >
-            <span>Animated Wind</span>
+            <span>🌎 National Wind Layer</span>
             <span className={`wind-status ${herbieWindEnabled ? 'on' : 'off'}`}>
               {herbieWindEnabled ? "ON" : "OFF"}
             </span>
@@ -1247,7 +1245,10 @@ const ParticleApp = () => {
             {timeBands.map((band) => (
               <button
                 key={band.index}
-                onClick={() => setSelectedTimeSlice(band.index)}
+                onClick={() => {
+                  setSelectedTimeSlice(band.index);
+                  setHerbieBandValue(band.bandValue);
+                }}
                 className={`time-btn ${selectedTimeSlice === band.index ? 'selected' : ''}`}
               >
                 {band.label.split(' ')[1]}
@@ -1255,9 +1256,9 @@ const ParticleApp = () => {
             ))}
           </div>
 
-          {selectedBand && (
+          {selectedTimeSlice !== null && timeBands[selectedTimeSlice] && (
             <div style={{ marginTop: '12px', fontSize: '11px', color: 'rgba(255,255,255,0.5)', textAlign: 'center' }}>
-              Selected: {selectedBand.label}
+              Selected: {timeBands[selectedTimeSlice].label}
             </div>
           )}
 
