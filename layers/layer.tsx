@@ -399,6 +399,105 @@ export const southeastWindMagnitudeLayer: LayerProps = {
 };
 
 /**
+ * Create Northwest resampled wind layer with a specific band value
+ */
+export const createNorthwestWindLayer = (bandValue: string | null): LayerProps => {
+  const paint: any = {
+    "raster-particle-speed-factor": 0.6,
+    "raster-particle-fade-opacity-factor": 0.85,
+    "raster-particle-reset-rate-factor": 0.3,
+    "raster-particle-count": 16000,
+    "raster-particle-max-speed": 40,
+    "raster-particle-color": [
+        "interpolate", ["linear"], ["raster-particle-speed"],
+        1.5, "rgba(100,200,255,256)", 2.5, "rgba(50,150,255,256)",
+        4.12, "rgba(0,200,255,256)", 6.17, "rgba(0,255,200,256)",
+        9.26, "rgba(0,255,100,256)", 11.83, "rgba(255,200,0,256)",
+        14.92, "rgba(255,120,0,256)", 18.0, "rgba(255,50,50,256)",
+        21.6, "rgba(255,0,150,256)", 25.21, "rgba(200,0,255,256)",
+        29.32, "rgba(150,0,255,256)", 33.44, "rgba(100,255,200,256)",
+        43.72, "rgba(255,255,100,256)", 50.41, "rgba(255,255,255,256)",
+        59.16, "rgba(0,255,255,256)", 69.44, "rgba(255,0,255,256)",
+      ],
+  };
+  if (bandValue) paint["raster-particle-array-band"] = String(bandValue);
+  return { id: "northwest-wind-layer", type: "raster-particle", source: "northwestWindSource", paint };
+};
+
+export const northwestWindMagnitudeLayer: LayerProps = {
+  id: "northwest-wind_u",
+  type: "raster",
+  source: "northwestWindSource",
+  paint: { "raster-opacity": 0, "raster-fade-duration": 0 },
+};
+
+/**
+ * Create Southwest resampled wind layer with a specific band value
+ */
+export const createSouthwestWindLayer = (bandValue: string | null): LayerProps => {
+  const paint: any = {
+    "raster-particle-speed-factor": 0.6,
+    "raster-particle-fade-opacity-factor": 0.85,
+    "raster-particle-reset-rate-factor": 0.3,
+    "raster-particle-count": 16000,
+    "raster-particle-max-speed": 40,
+    "raster-particle-color": [
+        "interpolate", ["linear"], ["raster-particle-speed"],
+        1.5, "rgba(100,200,255,256)", 2.5, "rgba(50,150,255,256)",
+        4.12, "rgba(0,200,255,256)", 6.17, "rgba(0,255,200,256)",
+        9.26, "rgba(0,255,100,256)", 11.83, "rgba(255,200,0,256)",
+        14.92, "rgba(255,120,0,256)", 18.0, "rgba(255,50,50,256)",
+        21.6, "rgba(255,0,150,256)", 25.21, "rgba(200,0,255,256)",
+        29.32, "rgba(150,0,255,256)", 33.44, "rgba(100,255,200,256)",
+        43.72, "rgba(255,255,100,256)", 50.41, "rgba(255,255,255,256)",
+        59.16, "rgba(0,255,255,256)", 69.44, "rgba(255,0,255,256)",
+      ],
+  };
+  if (bandValue) paint["raster-particle-array-band"] = String(bandValue);
+  return { id: "southwest-wind-layer", type: "raster-particle", source: "southwestWindSource", paint };
+};
+
+export const southwestWindMagnitudeLayer: LayerProps = {
+  id: "southwest-wind_u",
+  type: "raster",
+  source: "southwestWindSource",
+  paint: { "raster-opacity": 0, "raster-fade-duration": 0 },
+};
+
+/**
+ * Create West Coast resampled wind layer with a specific band value
+ */
+export const createWestCoastWindLayer = (bandValue: string | null): LayerProps => {
+  const paint: any = {
+    "raster-particle-speed-factor": 0.6,
+    "raster-particle-fade-opacity-factor": 0.85,
+    "raster-particle-reset-rate-factor": 0.3,
+    "raster-particle-count": 16000,
+    "raster-particle-max-speed": 40,
+    "raster-particle-color": [
+        "interpolate", ["linear"], ["raster-particle-speed"],
+        1.5, "rgba(100,200,255,256)", 2.5, "rgba(50,150,255,256)",
+        4.12, "rgba(0,200,255,256)", 6.17, "rgba(0,255,200,256)",
+        9.26, "rgba(0,255,100,256)", 11.83, "rgba(255,200,0,256)",
+        14.92, "rgba(255,120,0,256)", 18.0, "rgba(255,50,50,256)",
+        21.6, "rgba(255,0,150,256)", 25.21, "rgba(200,0,255,256)",
+        29.32, "rgba(150,0,255,256)", 33.44, "rgba(100,255,200,256)",
+        43.72, "rgba(255,255,100,256)", 50.41, "rgba(255,255,255,256)",
+        59.16, "rgba(0,255,255,256)", 69.44, "rgba(255,0,255,256)",
+      ],
+  };
+  if (bandValue) paint["raster-particle-array-band"] = String(bandValue);
+  return { id: "westcoast-wind-layer", type: "raster-particle", source: "westCoastWindSource", paint };
+};
+
+export const westCoastWindMagnitudeLayer: LayerProps = {
+  id: "westcoast-wind_u",
+  type: "raster",
+  source: "westCoastWindSource",
+  paint: { "raster-opacity": 0, "raster-fade-duration": 0 },
+};
+
+/**
  * Create TBOFS ocean current layer with a specific band value
  * @param bandValue - The band timestamp string from the tileset
  */

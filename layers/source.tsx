@@ -27,6 +27,27 @@ export const southeastWindSource: SourceProps = {
   tileSize: 4096,
 };
 
+// Northwest resampled wind (6x resolution ~500m)
+export const northwestWindSource: SourceProps = {
+  type: "raster-array",
+  url: "mapbox://onwaterllc.hrrr_wind_northwest",
+  tileSize: 4096,
+};
+
+// Southwest resampled wind (6x resolution ~500m)
+export const southwestWindSource: SourceProps = {
+  type: "raster-array",
+  url: "mapbox://onwaterllc.hrrr_wind_southwest",
+  tileSize: 4096,
+};
+
+// West Coast resampled wind (6x resolution ~500m)
+export const westCoastWindSource: SourceProps = {
+  type: "raster-array",
+  url: "mapbox://onwaterllc.hrrr_wind_west_coast",
+  tileSize: 4096,
+};
+
 // TBOFS Tampa Bay ocean currents
 export const tbofsCurrentSource: SourceProps = {
   type: "raster-array",

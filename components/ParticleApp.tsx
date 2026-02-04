@@ -17,6 +17,12 @@ import {
   northeastWindMagnitudeLayer,
   createSoutheastWindLayer,
   southeastWindMagnitudeLayer,
+  createNorthwestWindLayer,
+  northwestWindMagnitudeLayer,
+  createSouthwestWindLayer,
+  southwestWindMagnitudeLayer,
+  createWestCoastWindLayer,
+  westCoastWindMagnitudeLayer,
   createTbofsCurrentLayer,
   tbofsCurrentMagnitudeLayer,
   s3BandLayer,
@@ -27,6 +33,9 @@ import {
   particleSourceTwo,
   northeastWindSource,
   southeastWindSource,
+  northwestWindSource,
+  southwestWindSource,
+  westCoastWindSource,
   tbofsCurrentSource,
 } from "@/layers/source";
 import { useWeatherMetadata } from "@/hooks/useWeatherMetadata";
@@ -172,6 +181,21 @@ const ParticleApp = () => {
   const [southeastWindEnabled, setSoutheastWindEnabled] = useState(false);
   const [southeastBandValue, setSoutheastBandValue] = useState<string | null>(null);
   const [southeastBandLoaded, setSoutheastBandLoaded] = useState(false);
+
+  // State for Northwest resampled wind layer
+  const [northwestWindEnabled, setNorthwestWindEnabled] = useState(false);
+  const [northwestBandValue, setNorthwestBandValue] = useState<string | null>(null);
+  const [northwestBandLoaded, setNorthwestBandLoaded] = useState(false);
+
+  // State for Southwest resampled wind layer
+  const [southwestWindEnabled, setSouthwestWindEnabled] = useState(false);
+  const [southwestBandValue, setSouthwestBandValue] = useState<string | null>(null);
+  const [southwestBandLoaded, setSouthwestBandLoaded] = useState(false);
+
+  // State for West Coast resampled wind layer
+  const [westCoastWindEnabled, setWestCoastWindEnabled] = useState(false);
+  const [westCoastBandValue, setWestCoastBandValue] = useState<string | null>(null);
+  const [westCoastBandLoaded, setWestCoastBandLoaded] = useState(false);
 
   // State for TBOFS ocean currents particle layer
   const [tbofsCurrentEnabled, setTbofsCurrentEnabled] = useState(false);
@@ -606,6 +630,69 @@ const ParticleApp = () => {
       });
   };
 
+  // Fetch first band from Northwest resampled tileset
+  const fetchNorthwestBand = () => {
+    const tilesetId = "onwaterllc.hrrr_wind_northwest";
+    const cacheBuster = `&_t=${Date.now()}&_r=${Math.random()}`;
+    const url = `https://api.mapbox.com/v4/${tilesetId}.json?access_token=${MAPBOX_SECRET_TOKEN}${cacheBuster}`;
+
+    setNorthwestBandLoaded(false);
+    setNorthwestBandValue(null);
+    fetch(url, { cache: "no-store", headers: { "Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache" } })
+      .then((res) => { if (!res.ok) throw new Error("Failed to fetch Northwest tileset"); return res.json(); })
+      .then((data) => {
+        const bands: string[] = data.raster_layers?.[0]?.fields?.bands || [];
+        const sortedBands = [...bands].sort((a, b) => parseInt(a) - parseInt(b));
+        const oneHourAgo = Date.now() - 3600000;
+        const validBands = sortedBands.filter((b) => parseInt(b) * 1000 < oneHourAgo);
+        setNorthwestBandValue(validBands[0] || sortedBands[0] || null);
+        setNorthwestBandLoaded(true);
+      })
+      .catch((err) => { console.error("Error fetching Northwest tileset:", err); setNorthwestBandLoaded(true); });
+  };
+
+  // Fetch first band from Southwest resampled tileset
+  const fetchSouthwestBand = () => {
+    const tilesetId = "onwaterllc.hrrr_wind_southwest";
+    const cacheBuster = `&_t=${Date.now()}&_r=${Math.random()}`;
+    const url = `https://api.mapbox.com/v4/${tilesetId}.json?access_token=${MAPBOX_SECRET_TOKEN}${cacheBuster}`;
+
+    setSouthwestBandLoaded(false);
+    setSouthwestBandValue(null);
+    fetch(url, { cache: "no-store", headers: { "Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache" } })
+      .then((res) => { if (!res.ok) throw new Error("Failed to fetch Southwest tileset"); return res.json(); })
+      .then((data) => {
+        const bands: string[] = data.raster_layers?.[0]?.fields?.bands || [];
+        const sortedBands = [...bands].sort((a, b) => parseInt(a) - parseInt(b));
+        const oneHourAgo = Date.now() - 3600000;
+        const validBands = sortedBands.filter((b) => parseInt(b) * 1000 < oneHourAgo);
+        setSouthwestBandValue(validBands[0] || sortedBands[0] || null);
+        setSouthwestBandLoaded(true);
+      })
+      .catch((err) => { console.error("Error fetching Southwest tileset:", err); setSouthwestBandLoaded(true); });
+  };
+
+  // Fetch first band from West Coast resampled tileset
+  const fetchWestCoastBand = () => {
+    const tilesetId = "onwaterllc.hrrr_wind_west_coast";
+    const cacheBuster = `&_t=${Date.now()}&_r=${Math.random()}`;
+    const url = `https://api.mapbox.com/v4/${tilesetId}.json?access_token=${MAPBOX_SECRET_TOKEN}${cacheBuster}`;
+
+    setWestCoastBandLoaded(false);
+    setWestCoastBandValue(null);
+    fetch(url, { cache: "no-store", headers: { "Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache" } })
+      .then((res) => { if (!res.ok) throw new Error("Failed to fetch West Coast tileset"); return res.json(); })
+      .then((data) => {
+        const bands: string[] = data.raster_layers?.[0]?.fields?.bands || [];
+        const sortedBands = [...bands].sort((a, b) => parseInt(a) - parseInt(b));
+        const oneHourAgo = Date.now() - 3600000;
+        const validBands = sortedBands.filter((b) => parseInt(b) * 1000 < oneHourAgo);
+        setWestCoastBandValue(validBands[0] || sortedBands[0] || null);
+        setWestCoastBandLoaded(true);
+      })
+      .catch((err) => { console.error("Error fetching West Coast tileset:", err); setWestCoastBandLoaded(true); });
+  };
+
   // Fetch band from TBOFS ocean currents tileset
   const fetchTbofsBand = () => {
     const tilesetId = "onwaterllc.tbofs_currents";
@@ -649,6 +736,9 @@ const ParticleApp = () => {
     fetchHerbieBand();
     fetchNortheastBand();
     fetchSoutheastBand();
+    fetchNorthwestBand();
+    fetchSouthwestBand();
+    fetchWestCoastBand();
     fetchTbofsBand();
   }, [refreshKey]);
 
@@ -657,11 +747,17 @@ const ParticleApp = () => {
     setHerbieBandValue(null);
     setNortheastBandValue(null);
     setSoutheastBandValue(null);
+    setNorthwestBandValue(null);
+    setSouthwestBandValue(null);
+    setWestCoastBandValue(null);
     setTbofsCurrentBandValue(null);
     // Disable layers to prevent errors
     setHerbieWindEnabled(false);
     setNortheastWindEnabled(false);
     setSoutheastWindEnabled(false);
+    setNorthwestWindEnabled(false);
+    setSouthwestWindEnabled(false);
+    setWestCoastWindEnabled(false);
     setTbofsCurrentEnabled(false);
     // Trigger re-fetch
     setRefreshKey((prev) => prev + 1);
@@ -758,34 +854,26 @@ const ParticleApp = () => {
   // Update regional wind layer particle count based on zoom level
   useEffect(() => {
     const map = mapRef.current?.getMap();
-    if (!map || (!northeastWindEnabled && !southeastWindEnabled)) return;
+    const anyRegionalEnabled = northeastWindEnabled || southeastWindEnabled || northwestWindEnabled || southwestWindEnabled || westCoastWindEnabled;
+    if (!map || !anyRegionalEnabled) return;
 
     const updateParticleCount = () => {
       const zoom = map.getZoom();
       let particleCount: number;
 
-      // Calculate particle count based on zoom level
-      if (zoom < 3) {
-        particleCount = 4000;
-      } else if (zoom < 5) {
-        particleCount = 4000 + ((zoom - 3) / 2) * 4000;
-      } else if (zoom < 7) {
-        particleCount = 8000 + ((zoom - 5) / 2) * 8000;
-      } else if (zoom < 9) {
-        particleCount = 16000 + ((zoom - 7) / 2) * 8000;
-      } else if (zoom < 11) {
-        particleCount = 24000 + ((zoom - 9) / 2) * 8000;
-      } else {
-        particleCount = 32000;
-      }
+      if (zoom < 3) particleCount = 4000;
+      else if (zoom < 5) particleCount = 4000 + ((zoom - 3) / 2) * 4000;
+      else if (zoom < 7) particleCount = 8000 + ((zoom - 5) / 2) * 8000;
+      else if (zoom < 9) particleCount = 16000 + ((zoom - 7) / 2) * 8000;
+      else if (zoom < 11) particleCount = 24000 + ((zoom - 9) / 2) * 8000;
+      else particleCount = 32000;
 
-      // Update layers if they exist
-      if (map.getLayer("northeast-wind-layer")) {
-        map.setPaintProperty("northeast-wind-layer", "raster-particle-count", Math.round(particleCount));
-      }
-      if (map.getLayer("southeast-wind-layer")) {
-        map.setPaintProperty("southeast-wind-layer", "raster-particle-count", Math.round(particleCount));
-      }
+      const layers = ["northeast-wind-layer", "southeast-wind-layer", "northwest-wind-layer", "southwest-wind-layer", "westcoast-wind-layer"];
+      layers.forEach((layerId) => {
+        if (map.getLayer(layerId)) {
+          map.setPaintProperty(layerId, "raster-particle-count", Math.round(particleCount));
+        }
+      });
     };
 
     updateParticleCount();
@@ -796,7 +884,7 @@ const ParticleApp = () => {
       map.off("zoom", updateParticleCount);
       map.off("zoomend", updateParticleCount);
     };
-  }, [northeastWindEnabled, southeastWindEnabled, mapRef]);
+  }, [northeastWindEnabled, southeastWindEnabled, northwestWindEnabled, southwestWindEnabled, westCoastWindEnabled, mapRef]);
 
   return (
     <div style={{ position: "relative", width: "100%", height: "100vh" }}>
@@ -843,6 +931,27 @@ const ParticleApp = () => {
           <Source {...southeastWindSource}>
             <Layer {...southeastWindMagnitudeLayer} />
             <Layer {...createSoutheastWindLayer(southeastBandValue)} />
+          </Source>
+        )}
+
+        {northwestWindEnabled && northwestBandValue && (
+          <Source {...northwestWindSource}>
+            <Layer {...northwestWindMagnitudeLayer} />
+            <Layer {...createNorthwestWindLayer(northwestBandValue)} />
+          </Source>
+        )}
+
+        {southwestWindEnabled && southwestBandValue && (
+          <Source {...southwestWindSource}>
+            <Layer {...southwestWindMagnitudeLayer} />
+            <Layer {...createSouthwestWindLayer(southwestBandValue)} />
+          </Source>
+        )}
+
+        {westCoastWindEnabled && westCoastBandValue && (
+          <Source {...westCoastWindSource}>
+            <Layer {...westCoastWindMagnitudeLayer} />
+            <Layer {...createWestCoastWindLayer(westCoastBandValue)} />
           </Source>
         )}
 
@@ -1092,6 +1201,45 @@ const ParticleApp = () => {
             <span>🌴 Southeast Wind</span>
             <span className={`wind-status ${southeastWindEnabled ? 'on' : 'off'}`}>
               {southeastWindEnabled ? "ON" : "OFF"}
+            </span>
+          </button>
+
+          {/* Northwest Wind Resampled Toggle */}
+          <button
+            onClick={() => setNorthwestWindEnabled(!northwestWindEnabled)}
+            disabled={!northwestBandLoaded || !northwestBandValue}
+            className={`wind-btn ${northwestWindEnabled ? 'active' : ''}`}
+            style={{ marginTop: '8px' }}
+          >
+            <span>🌲 Northwest Wind</span>
+            <span className={`wind-status ${northwestWindEnabled ? 'on' : 'off'}`}>
+              {northwestWindEnabled ? "ON" : "OFF"}
+            </span>
+          </button>
+
+          {/* Southwest Wind Resampled Toggle */}
+          <button
+            onClick={() => setSouthwestWindEnabled(!southwestWindEnabled)}
+            disabled={!southwestBandLoaded || !southwestBandValue}
+            className={`wind-btn ${southwestWindEnabled ? 'active' : ''}`}
+            style={{ marginTop: '8px' }}
+          >
+            <span>🏜️ Southwest Wind</span>
+            <span className={`wind-status ${southwestWindEnabled ? 'on' : 'off'}`}>
+              {southwestWindEnabled ? "ON" : "OFF"}
+            </span>
+          </button>
+
+          {/* West Coast Wind Resampled Toggle */}
+          <button
+            onClick={() => setWestCoastWindEnabled(!westCoastWindEnabled)}
+            disabled={!westCoastBandLoaded || !westCoastBandValue}
+            className={`wind-btn ${westCoastWindEnabled ? 'active' : ''}`}
+            style={{ marginTop: '8px' }}
+          >
+            <span>🌊 West Coast Wind</span>
+            <span className={`wind-status ${westCoastWindEnabled ? 'on' : 'off'}`}>
+              {westCoastWindEnabled ? "ON" : "OFF"}
             </span>
           </button>
 
