@@ -146,7 +146,7 @@ const ParticleApp = () => {
   const [viewport, setViewport] = useState({
     latitude: 41.163,
     longitude: -98.163,
-    zoom: 6,
+    zoom: 3,
     projection: "mercator",
   });
 
@@ -167,32 +167,32 @@ const ParticleApp = () => {
   );
 
   // State for Herbie wind layer
-  const [herbieWindEnabled, setHerbieWindEnabled] = useState(false);
+  const [herbieWindEnabled, setHerbieWindEnabled] = useState(true);
   const [herbieBandValue, setHerbieBandValue] = useState<string | null>(null);
   const [herbieBandLoaded, setHerbieBandLoaded] = useState(false);
 
   // State for Northeast resampled wind layer
-  const [northeastWindEnabled, setNortheastWindEnabled] = useState(false);
+  const [northeastWindEnabled, setNortheastWindEnabled] = useState(true);
   const [northeastBandValue, setNortheastBandValue] = useState<string | null>(null);
   const [northeastBandLoaded, setNortheastBandLoaded] = useState(false);
 
   // State for Southeast resampled wind layer
-  const [southeastWindEnabled, setSoutheastWindEnabled] = useState(false);
+  const [southeastWindEnabled, setSoutheastWindEnabled] = useState(true);
   const [southeastBandValue, setSoutheastBandValue] = useState<string | null>(null);
   const [southeastBandLoaded, setSoutheastBandLoaded] = useState(false);
 
   // State for Northwest resampled wind layer
-  const [northwestWindEnabled, setNorthwestWindEnabled] = useState(false);
+  const [northwestWindEnabled, setNorthwestWindEnabled] = useState(true);
   const [northwestBandValue, setNorthwestBandValue] = useState<string | null>(null);
   const [northwestBandLoaded, setNorthwestBandLoaded] = useState(false);
 
   // State for Southwest resampled wind layer
-  const [southwestWindEnabled, setSouthwestWindEnabled] = useState(false);
+  const [southwestWindEnabled, setSouthwestWindEnabled] = useState(true);
   const [southwestBandValue, setSouthwestBandValue] = useState<string | null>(null);
   const [southwestBandLoaded, setSouthwestBandLoaded] = useState(false);
 
   // State for West Coast resampled wind layer
-  const [westCoastWindEnabled, setWestCoastWindEnabled] = useState(false);
+  const [westCoastWindEnabled, setWestCoastWindEnabled] = useState(true);
   const [westCoastBandValue, setWestCoastBandValue] = useState<string | null>(null);
   const [westCoastBandLoaded, setWestCoastBandLoaded] = useState(false);
 
@@ -1060,19 +1060,6 @@ const ParticleApp = () => {
               {oceanLayerEnabled ? "ON" : "OFF"}
             </button>
           </div>
-
-          {/* TBOFS Tampa Bay Currents - Particle Layer */}
-          <button
-            onClick={() => setTbofsCurrentEnabled(!tbofsCurrentEnabled)}
-            disabled={!tbofsCurrentBandLoaded || !tbofsCurrentBandValue}
-            className={`wind-btn ${tbofsCurrentEnabled ? 'active' : ''}`}
-            style={{ marginBottom: '12px' }}
-          >
-            <span>🌊 Tampa Bay Currents</span>
-            <span className={`wind-status ${tbofsCurrentEnabled ? 'on' : 'off'}`}>
-              {tbofsCurrentEnabled ? "ON" : "OFF"}
-            </span>
-          </button>
 
           {oceanLoading && !oceanMetadata && (
             <div className="info-card">Loading ocean data...</div>
