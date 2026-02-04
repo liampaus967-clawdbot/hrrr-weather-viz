@@ -16,7 +16,7 @@ export const particleSourceTwo: SourceProps = {
 // Vermont resampled wind (4x resolution ~750m)
 export const vermontWindSource: SourceProps = {
   type: "raster-array",
-  url: "mapbox://onwaterllc.hrrr_wind_resampled",
+  url: "mapbox://onwaterllc.hrrr_wind_northeast",
   tileSize: 4096,
 };
 

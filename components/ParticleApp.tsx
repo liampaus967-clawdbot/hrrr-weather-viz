@@ -701,6 +701,53 @@ const ParticleApp = () => {
     }
   }, [oceanMetadata, selectedOceanVariable, oceanLayerEnabled, initializeOceanLayers]);
 
+  // Update Vermont wind layer particle count based on zoom level
+  useEffect(() => {
+    const map = mapRef.current?.getMap();
+    if (!map || !vermontWindEnabled) return;
+
+    const updateParticleCount = () => {
+      const zoom = map.getZoom();
+      let particleCount: number;
+
+      // Calculate particle count based on zoom level
+      if (zoom < 3) {
+        particleCount = 4000;
+      } else if (zoom < 5) {
+        // Linear interpolation between zoom 3 and 5
+        particleCount = 4000 + ((zoom - 3) / 2) * 4000; // 4000 to 8000
+      } else if (zoom < 7) {
+        // Linear interpolation between zoom 5 and 7
+        particleCount = 8000 + ((zoom - 5) / 2) * 8000; // 8000 to 16000
+      } else if (zoom < 9) {
+        // Linear interpolation between zoom 7 and 9
+        particleCount = 16000 + ((zoom - 7) / 2) * 8000; // 16000 to 24000
+      } else if (zoom < 11) {
+        // Linear interpolation between zoom 9 and 11
+        particleCount = 24000 + ((zoom - 9) / 2) * 8000; // 24000 to 32000
+      } else {
+        particleCount = 32000;
+      }
+
+      // Update the layer if it exists
+      if (map.getLayer("vermont-wind-layer")) {
+        map.setPaintProperty("vermont-wind-layer", "raster-particle-count", Math.round(particleCount));
+      }
+    };
+
+    // Update immediately
+    updateParticleCount();
+
+    // Listen to zoom changes
+    map.on("zoom", updateParticleCount);
+    map.on("zoomend", updateParticleCount);
+
+    return () => {
+      map.off("zoom", updateParticleCount);
+      map.off("zoomend", updateParticleCount);
+    };
+  }, [vermontWindEnabled, mapRef]);
+
   return (
     <div style={{ position: "relative", width: "100%", height: "100vh" }}>
       <Map

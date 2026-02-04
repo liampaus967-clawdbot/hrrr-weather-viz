@@ -208,7 +208,7 @@ export const createVermontWindLayer = (bandValue: string | null): LayerProps => 
     "raster-particle-speed-factor": 0.6,
     "raster-particle-fade-opacity-factor": 0.85,
     "raster-particle-reset-rate-factor": 0.3,
-    "raster-particle-count": 16000,
+    "raster-particle-count": 16000, // Will be updated dynamically based on zoom
     "raster-particle-max-speed": 40,
     "raster-particle-color": [
         "interpolate",
