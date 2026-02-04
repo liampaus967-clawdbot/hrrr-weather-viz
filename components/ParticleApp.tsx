@@ -440,9 +440,9 @@ const ParticleApp = () => {
     }
   }, [selectedOceanVariableId]); // Only trigger on variable ID change
 
-  // Fetch tileset metadata and extract bands for National Wind Layer (Herbie 48h)
+  // Fetch tileset metadata and extract bands for National Wind Layer
   const fetchBands = () => {
-    const tilesetId = "onwaterllc.wind-hrrr-herbie-48h";
+    const tilesetId = "onwaterllc.wind-hrrr-daily-two";
     const cacheBuster = `&_t=${Date.now()}&_r=${Math.random()}`;
     const url = `https://api.mapbox.com/v4/${tilesetId}.json?access_token=${MAPBOX_SECRET_TOKEN}${cacheBuster}`;
 

@@ -9,7 +9,7 @@ export const particleSource: SourceProps = {
 
 export const particleSourceTwo: SourceProps = {
   type: "raster-array",
-  url: "mapbox://onwaterllc.wind-hrrr-herbie-48h",
+  url: "mapbox://onwaterllc.wind-hrrr-daily-two",
   tileSize: 512,
 };
 
