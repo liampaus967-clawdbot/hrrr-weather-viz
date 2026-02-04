@@ -292,6 +292,60 @@ export const vermontWindMagnitudeLayer: LayerProps = {
   },
 };
 
+/**
+ * Create TBOFS ocean current layer with a specific band value
+ * @param bandValue - The band timestamp string from the tileset
+ */
+export const createTbofsCurrentLayer = (bandValue: string): LayerProps => {
+  const band = String(bandValue);
+  console.log("Creating TBOFS current layer with band:", band);
+
+  return {
+    id: "tbofs-current-layer",
+    type: "raster-particle",
+    source: "tbofsCurrentSource",
+    paint: {
+      "raster-particle-array-band": band,
+      "raster-particle-speed-factor": 0.15,  // Slower for ocean currents
+      "raster-particle-fade-opacity-factor": 0.92,
+      "raster-particle-reset-rate-factor": 0.2,
+      "raster-particle-count": 8000,
+      "raster-particle-max-speed": 3,  // Ocean currents are much slower than wind
+      "raster-particle-color": [
+        "interpolate",
+        ["linear"],
+        ["raster-particle-speed"],
+        0.0,
+        "rgba(60,60,180,255)",   // Dark blue - very slow
+        0.2,
+        "rgba(80,120,200,255)",  // Blue
+        0.4,
+        "rgba(80,180,180,255)",  // Cyan
+        0.6,
+        "rgba(80,200,120,255)",  // Teal-green
+        0.8,
+        "rgba(180,200,80,255)",  // Yellow-green
+        1.2,
+        "rgba(220,180,60,255)",  // Orange
+        1.8,
+        "rgba(220,100,80,255)",  // Red-orange
+        2.5,
+        "rgba(200,60,100,255)",  // Red - fast current
+      ],
+    },
+  };
+};
+
+export const tbofsCurrentMagnitudeLayer: LayerProps = {
+  id: "tbofs-current_u",
+  type: "raster",
+  source: "tbofsCurrentSource",
+  paint: {
+    "raster-opacity": 0,
+    "raster-fade-duration": 0,
+  },
+};
+
 export const s3BandLayer: LayerProps = {
   id: "s3-band-layer",
   type: "raster",

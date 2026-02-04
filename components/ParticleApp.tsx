@@ -15,6 +15,8 @@ import {
   herbieWindMagnitudeLayer,
   createVermontWindLayer,
   vermontWindMagnitudeLayer,
+  createTbofsCurrentLayer,
+  tbofsCurrentMagnitudeLayer,
   s3BandLayer,
 } from "@/layers/layer";
 import { createWindLayer } from "@/layers/layer-with-time-control";
@@ -22,6 +24,7 @@ import {
   particleSource,
   particleSourceTwo,
   vermontWindSource,
+  tbofsCurrentSource,
 } from "@/layers/source";
 import { useWeatherMetadata } from "@/hooks/useWeatherMetadata";
 import type { WeatherVariable, ColorStop } from "@/hooks/useWeatherMetadata";
@@ -160,6 +163,11 @@ const ParticleApp = () => {
   const [vermontWindEnabled, setVermontWindEnabled] = useState(false);
   const [vermontBandValue, setVermontBandValue] = useState<string | null>(null);
   const [vermontBandLoaded, setVermontBandLoaded] = useState(false);
+
+  // State for TBOFS ocean currents particle layer
+  const [tbofsCurrentEnabled, setTbofsCurrentEnabled] = useState(false);
+  const [tbofsCurrentBandValue, setTbofsCurrentBandValue] = useState<string | null>(null);
+  const [tbofsCurrentBandLoaded, setTbofsCurrentBandLoaded] = useState(false);
 
   // Weather metadata from S3
   const {
@@ -539,10 +547,47 @@ const ParticleApp = () => {
       });
   };
 
+  // Fetch band from TBOFS ocean currents tileset
+  const fetchTbofsBand = () => {
+    const tilesetId = "onwaterllc.tbofs_currents";
+    const cacheBuster = `&_t=${Date.now()}`;
+    const url = `https://api.mapbox.com/v4/${tilesetId}.json?access_token=${MAPBOX_SECRET_TOKEN}${cacheBuster}`;
+
+    setTbofsCurrentBandLoaded(false);
+    fetch(url, {
+      cache: "no-cache",
+      headers: {
+        "Cache-Control": "no-cache",
+      },
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch TBOFS tileset metadata");
+        return res.json();
+      })
+      .then((data) => {
+        const rasterLayer = data.raster_layers?.[0];
+        if (rasterLayer?.fields?.bands) {
+          const bands: string[] = rasterLayer.fields.bands;
+          const sortedBands = [...bands].sort(
+            (a, b) => parseInt(a) - parseInt(b)
+          );
+          if (sortedBands.length > 0) {
+            setTbofsCurrentBandValue(sortedBands[0]);
+          }
+        }
+        setTbofsCurrentBandLoaded(true);
+      })
+      .catch((err) => {
+        console.error("Error fetching TBOFS tileset metadata:", err);
+        setTbofsCurrentBandLoaded(true);
+      });
+  };
+
   useEffect(() => {
     fetchBands();
     fetchHerbieBand();
     fetchVermontBand();
+    fetchTbofsBand();
   }, [refreshKey]);
 
   const refreshBands = () => {
@@ -673,6 +718,14 @@ const ParticleApp = () => {
             <Layer {...createVermontWindLayer(vermontBandValue)} />
           </Source>
         )}
+
+        {/* TBOFS Tampa Bay Ocean Currents */}
+        {tbofsCurrentEnabled && tbofsCurrentBandValue && (
+          <Source {...tbofsCurrentSource}>
+            <Layer {...tbofsCurrentMagnitudeLayer} />
+            <Layer {...createTbofsCurrentLayer(tbofsCurrentBandValue)} />
+          </Source>
+        )}
       </Map>
 
       {/* Left Panel - Controls */}
@@ -773,6 +826,19 @@ const ParticleApp = () => {
               {oceanLayerEnabled ? "ON" : "OFF"}
             </button>
           </div>
+
+          {/* TBOFS Tampa Bay Currents - Particle Layer */}
+          <button
+            onClick={() => setTbofsCurrentEnabled(!tbofsCurrentEnabled)}
+            disabled={!tbofsCurrentBandLoaded || !tbofsCurrentBandValue}
+            className={`wind-btn ${tbofsCurrentEnabled ? 'active' : ''}`}
+            style={{ marginBottom: '12px' }}
+          >
+            <span>🌊 Tampa Bay Currents</span>
+            <span className={`wind-status ${tbofsCurrentEnabled ? 'on' : 'off'}`}>
+              {tbofsCurrentEnabled ? "ON" : "OFF"}
+            </span>
+          </button>
 
           {oceanLoading && !oceanMetadata && (
             <div className="info-card">Loading ocean data...</div>

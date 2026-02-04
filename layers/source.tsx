@@ -20,6 +20,13 @@ export const vermontWindSource: SourceProps = {
   tileSize: 4096,
 };
 
+// TBOFS Tampa Bay ocean currents
+export const tbofsCurrentSource: SourceProps = {
+  type: "raster-array",
+  url: "mapbox://onwaterllc.tbofs_currents",
+  tileSize: 512,
+};
+
 /**
  * Create a dynamic raster source from weather metadata
  * @param metadata - Weather metadata from S3
