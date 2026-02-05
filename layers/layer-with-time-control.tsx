@@ -1,23 +1,20 @@
 // Using 'any' for LayerProps to support custom Mapbox layer types like raster-particle
 type CustomLayerProps = any;
-// #TEST
+
 /**
- * Create a wind layer with a specific band value
- * @param bandValue - The band timestamp string from the tileset (e.g., "1763089200")
- *                    This should be dynamically fetched from the tileset metadata
+ * Create a wind layer with a specific band index
+ * @param bandIndex - The band index (0, 1, 2, etc.) from the tileset
  */
-export const createWindLayer = (bandValue: string): CustomLayerProps => {
-  // Ensure band value is a string (Mapbox expects string for raster-array bands)
-  const band = String(bandValue);
-  console.log("Creating wind layer with band:", band, "Type:", typeof band);
+export const createWindLayer = (bandIndex: number): CustomLayerProps => {
+  console.log("Creating wind layer with band index:", bandIndex);
 
   return {
     id: "wind-layer",
     type: "raster-particle",
     source: "particleSource",
     paint: {
-      // Select which time slice to display using the GRIB_VALID_TIME value as a string
-      "raster-particle-array-band": band,
+      // Select which time slice to display using the band index
+      "raster-particle-array-band": bandIndex,
       "raster-particle-speed-factor": 0.4,
       "raster-particle-fade-opacity-factor": 0.9,
       "raster-particle-reset-rate-factor": 0.4,
