@@ -176,27 +176,27 @@ const ParticleApp = () => {
 
   // State for Northeast resampled wind layer
   const [northeastWindEnabled, setNortheastWindEnabled] = useState(true);
-  const [northeastBandIndex, setNortheastBandIndex] = useState<number | null>(null);
+  const [northeastBandValue, setNortheastBandValue] = useState<string | null>(null);
   const [northeastBandLoaded, setNortheastBandLoaded] = useState(false);
 
   // State for Southeast resampled wind layer
   const [southeastWindEnabled, setSoutheastWindEnabled] = useState(true);
-  const [southeastBandIndex, setSoutheastBandIndex] = useState<number | null>(null);
+  const [southeastBandValue, setSoutheastBandValue] = useState<string | null>(null);
   const [southeastBandLoaded, setSoutheastBandLoaded] = useState(false);
 
   // State for Northwest resampled wind layer
   const [northwestWindEnabled, setNorthwestWindEnabled] = useState(true);
-  const [northwestBandIndex, setNorthwestBandIndex] = useState<number | null>(null);
+  const [northwestBandValue, setNorthwestBandValue] = useState<string | null>(null);
   const [northwestBandLoaded, setNorthwestBandLoaded] = useState(false);
 
   // State for Southwest resampled wind layer
   const [southwestWindEnabled, setSouthwestWindEnabled] = useState(true);
-  const [southwestBandIndex, setSouthwestBandIndex] = useState<number | null>(null);
+  const [southwestBandValue, setSouthwestBandValue] = useState<string | null>(null);
   const [southwestBandLoaded, setSouthwestBandLoaded] = useState(false);
 
   // State for West Coast resampled wind layer
   const [westCoastWindEnabled, setWestCoastWindEnabled] = useState(true);
-  const [westCoastBandIndex, setWestCoastBandIndex] = useState<number | null>(null);
+  const [westCoastBandValue, setWestCoastBandValue] = useState<string | null>(null);
   const [westCoastBandLoaded, setWestCoastBandLoaded] = useState(false);
 
   // State for TBOFS ocean currents particle layer
@@ -553,7 +553,7 @@ const ParticleApp = () => {
     const url = `https://api.mapbox.com/v4/${tilesetId}.json?access_token=${MAPBOX_SECRET_TOKEN}${cacheBuster}`;
 
     setNortheastBandLoaded(false);
-    setNortheastBandIndex(null);
+    setNortheastBandValue(null);
     fetch(url, {
       cache: "no-store",
       headers: {
@@ -577,8 +577,10 @@ const ParticleApp = () => {
             const bandTimestamp = parseInt(bandValue) * 1000;
             return bandTimestamp < oneHourAgo;
           });
-          if (validBands.length > 0 || sortedBands.length > 0) {
-            setNortheastBandIndex(0);
+          if (validBands.length > 0) {
+            setNortheastBandValue(validBands[0]);
+          } else if (sortedBands.length > 0) {
+            setNortheastBandValue(sortedBands[0]);
           }
         }
         setNortheastBandLoaded(true);
@@ -596,7 +598,7 @@ const ParticleApp = () => {
     const url = `https://api.mapbox.com/v4/${tilesetId}.json?access_token=${MAPBOX_SECRET_TOKEN}${cacheBuster}`;
 
     setSoutheastBandLoaded(false);
-    setSoutheastBandIndex(null);
+    setSoutheastBandValue(null);
     fetch(url, {
       cache: "no-store",
       headers: {
@@ -620,8 +622,10 @@ const ParticleApp = () => {
             const bandTimestamp = parseInt(bandValue) * 1000;
             return bandTimestamp < oneHourAgo;
           });
-          if (validBands.length > 0 || sortedBands.length > 0) {
-            setSoutheastBandIndex(0);
+          if (validBands.length > 0) {
+            setSoutheastBandValue(validBands[0]);
+          } else if (sortedBands.length > 0) {
+            setSoutheastBandValue(sortedBands[0]);
           }
         }
         setSoutheastBandLoaded(true);
@@ -639,7 +643,7 @@ const ParticleApp = () => {
     const url = `https://api.mapbox.com/v4/${tilesetId}.json?access_token=${MAPBOX_SECRET_TOKEN}${cacheBuster}`;
 
     setNorthwestBandLoaded(false);
-    setNorthwestBandIndex(null);
+    setNorthwestBandValue(null);
     fetch(url, { cache: "no-store", headers: { "Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache" } })
       .then((res) => { if (!res.ok) throw new Error("Failed to fetch Northwest tileset"); return res.json(); })
       .then((data) => {
@@ -647,7 +651,7 @@ const ParticleApp = () => {
         const sortedBands = [...bands].sort((a, b) => parseInt(a) - parseInt(b));
         const oneHourAgo = Date.now() - 3600000;
         const validBands = sortedBands.filter((b) => parseInt(b) * 1000 < oneHourAgo);
-        setNorthwestBandIndex(sortedBands.length > 0 ? 0 : null);
+        setNorthwestBandValue(sortedBands[0] || null);
         setNorthwestBandLoaded(true);
       })
       .catch((err) => { console.error("Error fetching Northwest tileset:", err); setNorthwestBandLoaded(true); });
@@ -660,7 +664,7 @@ const ParticleApp = () => {
     const url = `https://api.mapbox.com/v4/${tilesetId}.json?access_token=${MAPBOX_SECRET_TOKEN}${cacheBuster}`;
 
     setSouthwestBandLoaded(false);
-    setSouthwestBandIndex(null);
+    setSouthwestBandValue(null);
     fetch(url, { cache: "no-store", headers: { "Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache" } })
       .then((res) => { if (!res.ok) throw new Error("Failed to fetch Southwest tileset"); return res.json(); })
       .then((data) => {
@@ -668,7 +672,7 @@ const ParticleApp = () => {
         const sortedBands = [...bands].sort((a, b) => parseInt(a) - parseInt(b));
         const oneHourAgo = Date.now() - 3600000;
         const validBands = sortedBands.filter((b) => parseInt(b) * 1000 < oneHourAgo);
-        setSouthwestBandIndex(sortedBands.length > 0 ? 0 : null);
+        setSouthwestBandValue(sortedBands[0] || null);
         setSouthwestBandLoaded(true);
       })
       .catch((err) => { console.error("Error fetching Southwest tileset:", err); setSouthwestBandLoaded(true); });
@@ -681,7 +685,7 @@ const ParticleApp = () => {
     const url = `https://api.mapbox.com/v4/${tilesetId}.json?access_token=${MAPBOX_SECRET_TOKEN}${cacheBuster}`;
 
     setWestCoastBandLoaded(false);
-    setWestCoastBandIndex(null);
+    setWestCoastBandValue(null);
     fetch(url, { cache: "no-store", headers: { "Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache" } })
       .then((res) => { if (!res.ok) throw new Error("Failed to fetch West Coast tileset"); return res.json(); })
       .then((data) => {
@@ -689,7 +693,7 @@ const ParticleApp = () => {
         const sortedBands = [...bands].sort((a, b) => parseInt(a) - parseInt(b));
         const oneHourAgo = Date.now() - 3600000;
         const validBands = sortedBands.filter((b) => parseInt(b) * 1000 < oneHourAgo);
-        setWestCoastBandIndex(sortedBands.length > 0 ? 0 : null);
+        setWestCoastBandValue(sortedBands[0] || null);
         setWestCoastBandLoaded(true);
       })
       .catch((err) => { console.error("Error fetching West Coast tileset:", err); setWestCoastBandLoaded(true); });
@@ -746,11 +750,11 @@ const ParticleApp = () => {
   const refreshBands = () => {
     // Clear all cached band values first
     setHerbieBandIndex(null);
-    setNortheastBandIndex(null);
-    setSoutheastBandIndex(null);
-    setNorthwestBandIndex(null);
-    setSouthwestBandIndex(null);
-    setWestCoastBandIndex(null);
+    setNortheastBandValue(null);
+    setSoutheastBandValue(null);
+    setNorthwestBandValue(null);
+    setSouthwestBandValue(null);
+    setWestCoastBandValue(null);
     setTbofsCurrentBandIndex(null);
     // Disable layers to prevent errors
     setHerbieWindEnabled(false);
@@ -915,38 +919,38 @@ const ParticleApp = () => {
           </Source>
         )}
 
-        {northeastWindEnabled && northeastBandIndex !== null && (
+        {northeastWindEnabled && northeastBandValue !== null && (
           <Source {...northeastWindSource}>
             <Layer {...northeastWindMagnitudeLayer} />
-            <Layer {...createNortheastWindLayer(northeastBandIndex)} />
+            <Layer {...createNortheastWindLayer(northeastBandValue)} />
           </Source>
         )}
 
-        {southeastWindEnabled && southeastBandIndex !== null && (
+        {southeastWindEnabled && southeastBandValue !== null && (
           <Source {...southeastWindSource}>
             <Layer {...southeastWindMagnitudeLayer} />
-            <Layer {...createSoutheastWindLayer(southeastBandIndex)} />
+            <Layer {...createSoutheastWindLayer(southeastBandValue)} />
           </Source>
         )}
 
-        {northwestWindEnabled && northwestBandIndex !== null && (
+        {northwestWindEnabled && northwestBandValue !== null && (
           <Source {...northwestWindSource}>
             <Layer {...northwestWindMagnitudeLayer} />
-            <Layer {...createNorthwestWindLayer(northwestBandIndex)} />
+            <Layer {...createNorthwestWindLayer(northwestBandValue)} />
           </Source>
         )}
 
-        {southwestWindEnabled && southwestBandIndex !== null && (
+        {southwestWindEnabled && southwestBandValue !== null && (
           <Source {...southwestWindSource}>
             <Layer {...southwestWindMagnitudeLayer} />
-            <Layer {...createSouthwestWindLayer(southwestBandIndex)} />
+            <Layer {...createSouthwestWindLayer(southwestBandValue)} />
           </Source>
         )}
 
-        {westCoastWindEnabled && westCoastBandIndex !== null && (
+        {westCoastWindEnabled && westCoastBandValue !== null && (
           <Source {...westCoastWindSource}>
             <Layer {...westCoastWindMagnitudeLayer} />
-            <Layer {...createWestCoastWindLayer(westCoastBandIndex)} />
+            <Layer {...createWestCoastWindLayer(westCoastBandValue)} />
           </Source>
         )}
 
@@ -1178,7 +1182,7 @@ const ParticleApp = () => {
           {/* Northeast Wind Resampled Toggle */}
           <button
             onClick={() => setNortheastWindEnabled(!northeastWindEnabled)}
-            disabled={!northeastBandLoaded || northeastBandIndex === null}
+            disabled={!northeastBandLoaded || northeastBandValue === null}
             className={`wind-btn ${northeastWindEnabled ? 'active' : ''}`}
             style={{ marginTop: '8px' }}
           >
@@ -1191,7 +1195,7 @@ const ParticleApp = () => {
           {/* Southeast Wind Resampled Toggle */}
           <button
             onClick={() => setSoutheastWindEnabled(!southeastWindEnabled)}
-            disabled={!southeastBandLoaded || southeastBandIndex === null}
+            disabled={!southeastBandLoaded || southeastBandValue === null}
             className={`wind-btn ${southeastWindEnabled ? 'active' : ''}`}
             style={{ marginTop: '8px' }}
           >
@@ -1204,7 +1208,7 @@ const ParticleApp = () => {
           {/* Northwest Wind Resampled Toggle */}
           <button
             onClick={() => setNorthwestWindEnabled(!northwestWindEnabled)}
-            disabled={!northwestBandLoaded || northwestBandIndex === null}
+            disabled={!northwestBandLoaded || northwestBandValue === null}
             className={`wind-btn ${northwestWindEnabled ? 'active' : ''}`}
             style={{ marginTop: '8px' }}
           >
@@ -1217,7 +1221,7 @@ const ParticleApp = () => {
           {/* Southwest Wind Resampled Toggle */}
           <button
             onClick={() => setSouthwestWindEnabled(!southwestWindEnabled)}
-            disabled={!southwestBandLoaded || southwestBandIndex === null}
+            disabled={!southwestBandLoaded || southwestBandValue === null}
             className={`wind-btn ${southwestWindEnabled ? 'active' : ''}`}
             style={{ marginTop: '8px' }}
           >
@@ -1230,7 +1234,7 @@ const ParticleApp = () => {
           {/* West Coast Wind Resampled Toggle */}
           <button
             onClick={() => setWestCoastWindEnabled(!westCoastWindEnabled)}
-            disabled={!westCoastBandLoaded || westCoastBandIndex === null}
+            disabled={!westCoastBandLoaded || westCoastBandValue === null}
             className={`wind-btn ${westCoastWindEnabled ? 'active' : ''}`}
             style={{ marginTop: '8px' }}
           >

@@ -198,11 +198,11 @@ export const herbieWindMagnitudeLayer: LayerProps = {
 };
 
 /**
- * Create Northeast resampled wind layer with a specific band index
- * @param bandIndex - The band index (0, 1, 2, etc.) from the tileset
+ * Create Northeast resampled wind layer with a specific band value
+ * @param bandValue - The band timestamp string from the tileset
  */
-export const createNortheastWindLayer = (bandIndex: number | null): LayerProps => {
-  console.log("Creating Northeast wind layer with band index:", bandIndex);
+export const createNortheastWindLayer = (bandValue: string | null): LayerProps => {
+  console.log("Creating Northeast wind layer with band:", bandValue);
 
   // Build paint object dynamically
   const paint: any = {
@@ -277,8 +277,8 @@ export const createNortheastWindLayer = (bandIndex: number | null): LayerProps =
   };
 
   // Only add band if we have a valid value (allows fallback to first band)
-  if (bandIndex !== null) {
-    paint["raster-particle-array-band"] = bandIndex;
+  if (bandValue) {
+    paint["raster-particle-array-band"] = String(bandValue);
   }
 
   return {
@@ -300,11 +300,11 @@ export const northeastWindMagnitudeLayer: LayerProps = {
 };
 
 /**
- * Create Southeast resampled wind layer with a specific band index
- * @param bandIndex - The band index (0, 1, 2, etc.) from the tileset
+ * Create Southeast resampled wind layer with a specific band value
+ * @param bandValue - The band timestamp string from the tileset
  */
-export const createSoutheastWindLayer = (bandIndex: number | null): LayerProps => {
-  console.log("Creating Southeast wind layer with band index:", bandIndex);
+export const createSoutheastWindLayer = (bandValue: string | null): LayerProps => {
+  console.log("Creating Southeast wind layer with band:", bandValue);
 
   const paint: any = {
     "raster-particle-speed-factor": 0.6,
@@ -377,8 +377,8 @@ export const createSoutheastWindLayer = (bandIndex: number | null): LayerProps =
       ],
   };
 
-  if (bandIndex !== null) {
-    paint["raster-particle-array-band"] = bandIndex;
+  if (bandValue) {
+    paint["raster-particle-array-band"] = String(bandValue);
   }
 
   return {
@@ -400,9 +400,9 @@ export const southeastWindMagnitudeLayer: LayerProps = {
 };
 
 /**
- * Create Northwest resampled wind layer with a specific band index
+ * Create Northwest resampled wind layer with a specific band value
  */
-export const createNorthwestWindLayer = (bandIndex: number | null): LayerProps => {
+export const createNorthwestWindLayer = (bandValue: string | null): LayerProps => {
   const paint: any = {
     "raster-particle-speed-factor": 0.6,
     "raster-particle-fade-opacity-factor": 0.85,
@@ -421,7 +421,7 @@ export const createNorthwestWindLayer = (bandIndex: number | null): LayerProps =
         59.16, "rgba(0,255,255,256)", 69.44, "rgba(255,0,255,256)",
       ],
   };
-  if (bandIndex !== null) paint["raster-particle-array-band"] = bandIndex;
+  if (bandValue) paint["raster-particle-array-band"] = String(bandValue);
   return { id: "northwest-wind-layer", type: "raster-particle", source: "northwestWindSource", paint };
 };
 
@@ -433,9 +433,9 @@ export const northwestWindMagnitudeLayer: LayerProps = {
 };
 
 /**
- * Create Southwest resampled wind layer with a specific band index
+ * Create Southwest resampled wind layer with a specific band value
  */
-export const createSouthwestWindLayer = (bandIndex: number | null): LayerProps => {
+export const createSouthwestWindLayer = (bandValue: string | null): LayerProps => {
   const paint: any = {
     "raster-particle-speed-factor": 0.6,
     "raster-particle-fade-opacity-factor": 0.85,
@@ -454,7 +454,7 @@ export const createSouthwestWindLayer = (bandIndex: number | null): LayerProps =
         59.16, "rgba(0,255,255,256)", 69.44, "rgba(255,0,255,256)",
       ],
   };
-  if (bandIndex !== null) paint["raster-particle-array-band"] = bandIndex;
+  if (bandValue) paint["raster-particle-array-band"] = String(bandValue);
   return { id: "southwest-wind-layer", type: "raster-particle", source: "southwestWindSource", paint };
 };
 
@@ -466,9 +466,9 @@ export const southwestWindMagnitudeLayer: LayerProps = {
 };
 
 /**
- * Create West Coast resampled wind layer with a specific band index
+ * Create West Coast resampled wind layer with a specific band value
  */
-export const createWestCoastWindLayer = (bandIndex: number | null): LayerProps => {
+export const createWestCoastWindLayer = (bandValue: string | null): LayerProps => {
   const paint: any = {
     "raster-particle-speed-factor": 0.6,
     "raster-particle-fade-opacity-factor": 0.85,
@@ -487,7 +487,7 @@ export const createWestCoastWindLayer = (bandIndex: number | null): LayerProps =
         59.16, "rgba(0,255,255,256)", 69.44, "rgba(255,0,255,256)",
       ],
   };
-  if (bandIndex !== null) paint["raster-particle-array-band"] = bandIndex;
+  if (bandValue) paint["raster-particle-array-band"] = String(bandValue);
   return { id: "westcoast-wind-layer", type: "raster-particle", source: "westCoastWindSource", paint };
 };
 
