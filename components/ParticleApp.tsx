@@ -1246,7 +1246,7 @@ const ParticleApp = () => {
                 key={band.index}
                 onClick={() => {
                   setSelectedTimeSlice(band.index);
-                  setHerbieBandIndex(band.bandValue);
+                  setHerbieBandIndex(band.index);
                 }}
                 className={`time-btn ${selectedTimeSlice === band.index ? 'selected' : ''}`}
               >
