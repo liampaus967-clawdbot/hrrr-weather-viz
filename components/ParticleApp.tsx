@@ -975,7 +975,7 @@ const ParticleApp = () => {
       />
 
       {/* Left Panel - Controls */}
-      <div className={`control-panel ${panelOpen ? 'open' : ''}`}
+      <div className={`control-panel ${panelOpen ? 'open' : ''}`}>
         {/* Weather Variable Selector */}
         <div className="panel-section">
           <div className="section-header">
