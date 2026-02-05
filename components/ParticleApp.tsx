@@ -166,6 +166,9 @@ const ParticleApp = () => {
     null
   );
 
+  // State for mobile panel visibility
+  const [panelOpen, setPanelOpen] = useState(false);
+
   // State for Herbie wind layer
   const [herbieWindEnabled, setHerbieWindEnabled] = useState(true);
   const [herbieBandIndex, setHerbieBandIndex] = useState<number | null>(null);
@@ -956,8 +959,23 @@ const ParticleApp = () => {
         )}
       </Map>
 
+      {/* Mobile Panel Toggle Button */}
+      <button 
+        className={`panel-toggle ${panelOpen ? 'open' : ''}`}
+        onClick={() => setPanelOpen(!panelOpen)}
+        aria-label="Toggle control panel"
+      >
+        {panelOpen ? '✕' : '☰'}
+      </button>
+
+      {/* Overlay for mobile when panel is open */}
+      <div 
+        className={`panel-overlay ${panelOpen ? 'visible' : ''}`}
+        onClick={() => setPanelOpen(false)}
+      />
+
       {/* Left Panel - Controls */}
-      <div className="control-panel">
+      <div className={`control-panel ${panelOpen ? 'open' : ''}`}
         {/* Weather Variable Selector */}
         <div className="panel-section">
           <div className="section-header">
