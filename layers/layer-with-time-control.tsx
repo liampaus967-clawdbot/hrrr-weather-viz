@@ -2,19 +2,19 @@
 type CustomLayerProps = any;
 
 /**
- * Create a wind layer with a specific band index
- * @param bandIndex - The band index (0, 1, 2, etc.) from the tileset
+ * Create a wind layer with a specific band value
+ * @param bandValue - The band timestamp string from the tileset
  */
-export const createWindLayer = (bandIndex: number): CustomLayerProps => {
-  console.log("Creating wind layer with band index:", bandIndex);
+export const createWindLayer = (bandValue: string): CustomLayerProps => {
+  console.log("Creating wind layer with band:", bandValue);
 
   return {
     id: "wind-layer",
     type: "raster-particle",
     source: "particleSource",
     paint: {
-      // Select which time slice to display using the band index
-      "raster-particle-array-band": bandIndex,
+      // Select which time slice to display using the band value
+      "raster-particle-array-band": String(bandValue),
       "raster-particle-speed-factor": 0.4,
       "raster-particle-fade-opacity-factor": 0.9,
       "raster-particle-reset-rate-factor": 0.4,

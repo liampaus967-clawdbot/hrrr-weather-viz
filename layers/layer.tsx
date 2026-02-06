@@ -101,11 +101,11 @@ export const windMagnitudeLayer: LayerProps = {
 };
 
 /**
- * Create a Herbie wind layer with a specific band index
- * @param bandIndex - The band index (0, 1, 2, etc.) from the tileset
+ * Create a Herbie wind layer with a specific band value
+ * @param bandValue - The band timestamp string from the tileset
  */
-export const createHerbieWindLayer = (bandIndex: number): LayerProps => {
-  console.log("Creating Herbie wind layer with band index:", bandIndex);
+export const createHerbieWindLayer = (bandValue: string): LayerProps => {
+  console.log("Creating Herbie wind layer with band:", bandValue);
 
   return {
     id: "herbie-wind-layer",
@@ -113,7 +113,7 @@ export const createHerbieWindLayer = (bandIndex: number): LayerProps => {
     source: "particleSourceTwo",
     maxzoom: 7, // Stop showing at zoom level 7
     paint: {
-      "raster-particle-array-band": bandIndex,
+      "raster-particle-array-band": String(bandValue),
       "raster-particle-speed-factor": 0.4,
       "raster-particle-fade-opacity-factor": 0.9,
       "raster-particle-reset-rate-factor": 0.4,
@@ -499,18 +499,18 @@ export const westCoastWindMagnitudeLayer: LayerProps = {
 };
 
 /**
- * Create TBOFS ocean current layer with a specific band index
- * @param bandIndex - The band index (0, 1, 2, etc.) from the tileset
+ * Create TBOFS ocean current layer with a specific band value
+ * @param bandValue - The band timestamp string from the tileset
  */
-export const createTbofsCurrentLayer = (bandIndex: number): LayerProps => {
-  console.log("Creating TBOFS current layer with band index:", bandIndex);
+export const createTbofsCurrentLayer = (bandValue: string): LayerProps => {
+  console.log("Creating TBOFS current layer with band:", bandValue);
 
   return {
     id: "tbofs-current-layer",
     type: "raster-particle",
     source: "tbofsCurrentSource",
     paint: {
-      "raster-particle-array-band": bandIndex,
+      "raster-particle-array-band": String(bandValue),
       "raster-particle-speed-factor": 0.15,  // Slower for ocean currents
       "raster-particle-fade-opacity-factor": 0.92,
       "raster-particle-reset-rate-factor": 0.2,

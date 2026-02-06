@@ -171,7 +171,7 @@ const ParticleApp = () => {
 
   // State for Herbie wind layer
   const [herbieWindEnabled, setHerbieWindEnabled] = useState(true);
-  const [herbieBandIndex, setHerbieBandIndex] = useState<number | null>(null);
+  const [herbieBandValue, setHerbieBandValue] = useState<string | null>(null);
   const [herbieBandLoaded, setHerbieBandLoaded] = useState(false);
 
   // State for Northeast resampled wind layer
@@ -201,7 +201,7 @@ const ParticleApp = () => {
 
   // State for TBOFS ocean currents particle layer
   const [tbofsCurrentEnabled, setTbofsCurrentEnabled] = useState(false);
-  const [tbofsCurrentBandIndex, setTbofsCurrentBandIndex] = useState<number | null>(null);
+  const [tbofsCurrentBandValue, setTbofsCurrentBandValue] = useState<string | null>(null);
   const [tbofsCurrentBandLoaded, setTbofsCurrentBandLoaded] = useState(false);
 
   // Weather metadata from S3
@@ -485,9 +485,9 @@ const ParticleApp = () => {
               index: newIndex,
             }));
           setTimeBands(mappedBands);
-          // Auto-select first band for Herbie layer (use index 0)
+          // Auto-select first band for Herbie layer
           if (mappedBands.length > 0) {
-            setHerbieBandIndex(0);
+            setHerbieBandValue(mappedBands[0].bandValue);
             setSelectedTimeSlice(0);
           }
         }
@@ -508,7 +508,7 @@ const ParticleApp = () => {
     const url = `https://api.mapbox.com/v4/${tilesetId}.json?access_token=${MAPBOX_SECRET_TOKEN}${cacheBuster}`;
 
     setHerbieBandLoaded(false);
-    setHerbieBandIndex(null); // Clear old value immediately
+    setHerbieBandValue(null); // Clear old value immediately
     fetch(url, {
       cache: "no-store",
       headers: {
@@ -533,9 +533,10 @@ const ParticleApp = () => {
             const bandTimestamp = parseInt(bandValue) * 1000;
             return bandTimestamp < oneHourAgo;
           });
-          if (validBands.length > 0 || sortedBands.length > 0) {
-            // Use index 0 for the first band
-            setHerbieBandIndex(0);
+          if (validBands.length > 0) {
+            setHerbieBandValue(validBands[0]);
+          } else if (sortedBands.length > 0) {
+            setHerbieBandValue(sortedBands[0]);
           }
         }
         setHerbieBandLoaded(true);
@@ -706,7 +707,7 @@ const ParticleApp = () => {
     const url = `https://api.mapbox.com/v4/${tilesetId}.json?access_token=${MAPBOX_SECRET_TOKEN}${cacheBuster}`;
 
     setTbofsCurrentBandLoaded(false);
-    setTbofsCurrentBandIndex(null); // Clear old value immediately
+    setTbofsCurrentBandValue(null); // Clear old value immediately
     fetch(url, {
       cache: "no-store",
       headers: {
@@ -726,7 +727,7 @@ const ParticleApp = () => {
             (a, b) => parseInt(a) - parseInt(b)
           );
           if (sortedBands.length > 0) {
-            setTbofsCurrentBandIndex(0);
+            setTbofsCurrentBandValue(sortedBands[0]);
           }
         }
         setTbofsCurrentBandLoaded(true);
@@ -749,13 +750,13 @@ const ParticleApp = () => {
 
   const refreshBands = () => {
     // Clear all cached band values first
-    setHerbieBandIndex(null);
+    setHerbieBandValue(null);
     setNortheastBandValue(null);
     setSoutheastBandValue(null);
     setNorthwestBandValue(null);
     setSouthwestBandValue(null);
     setWestCoastBandValue(null);
-    setTbofsCurrentBandIndex(null);
+    setTbofsCurrentBandValue(null);
     // Disable layers to prevent errors
     setHerbieWindEnabled(false);
     setNortheastWindEnabled(false);
@@ -912,10 +913,10 @@ const ParticleApp = () => {
 
         {/* Wind Particle Layers */}
         {/* National Wind Layer (Herbie 48h) */}
-        {herbieWindEnabled && herbieBandIndex !== null && (
+        {herbieWindEnabled && herbieBandValue !== null && (
           <Source {...particleSourceTwo}>
             <Layer {...herbieWindMagnitudeLayer} />
-            <Layer {...createHerbieWindLayer(herbieBandIndex)} />
+            <Layer {...createHerbieWindLayer(herbieBandValue)} />
           </Source>
         )}
 
@@ -955,10 +956,10 @@ const ParticleApp = () => {
         )}
 
         {/* TBOFS Tampa Bay Ocean Currents */}
-        {tbofsCurrentEnabled && tbofsCurrentBandIndex !== null && (
+        {tbofsCurrentEnabled && tbofsCurrentBandValue !== null && (
           <Source {...tbofsCurrentSource}>
             <Layer {...tbofsCurrentMagnitudeLayer} />
-            <Layer {...createTbofsCurrentLayer(tbofsCurrentBandIndex)} />
+            <Layer {...createTbofsCurrentLayer(tbofsCurrentBandValue)} />
           </Source>
         )}
       </Map>
@@ -1170,7 +1171,7 @@ const ParticleApp = () => {
           {/* National Wind Layer Toggle */}
           <button
             onClick={() => setHerbieWindEnabled(!herbieWindEnabled)}
-            disabled={!herbieBandLoaded || herbieBandIndex === null}
+            disabled={!herbieBandLoaded || herbieBandValue === null}
             className={`wind-btn ${herbieWindEnabled ? 'active' : ''}`}
           >
             <span>🌎 National Wind Layer</span>
@@ -1250,7 +1251,7 @@ const ParticleApp = () => {
                 key={band.index}
                 onClick={() => {
                   setSelectedTimeSlice(band.index);
-                  setHerbieBandIndex(band.index);
+                  setHerbieBandValue(band.bandValue);
                 }}
                 className={`time-btn ${selectedTimeSlice === band.index ? 'selected' : ''}`}
               >
