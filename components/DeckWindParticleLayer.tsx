@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useEffect, useRef, useMemo, useCallback } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import { MapboxOverlay } from '@deck.gl/mapbox';
-import { ScatterplotLayer, LineLayer } from '@deck.gl/layers';
+import { PathLayer } from '@deck.gl/layers';
 import type { MapRef } from 'react-map-gl';
 import type { WindData } from '@/hooks/useWindData';
 
@@ -10,14 +10,9 @@ interface Particle {
   id: number;
   x: number;
   y: number;
-  lng: number;
-  lat: number;
   age: number;
   maxAge: number;
-  u: number;
-  v: number;
-  magnitude: number;
-  trail: [number, number][];
+  trail: { lng: number; lat: number; age: number }[];
 }
 
 interface DeckWindParticleLayerProps {
@@ -25,48 +20,44 @@ interface DeckWindParticleLayerProps {
   windData: WindData | null;
   enabled?: boolean;
   particleCount?: number;
-  particleSize?: number;
+  lineWidth?: number;
   speedFactor?: number;
-  fadeOpacity?: number;
   trailLength?: number;
-  colorScale?: [number, number, number][];
   maxAge?: number;
+  opacity?: number;
 }
 
-// Color scale for wind speed (m/s)
-const DEFAULT_COLOR_SCALE: [number, number, number][] = [
-  [65, 182, 196],   // 0-5 m/s - light blue
-  [127, 205, 187],  // 5-10 m/s - teal
-  [199, 233, 180],  // 10-15 m/s - light green
-  [237, 248, 177],  // 15-20 m/s - yellow-green
-  [255, 237, 160],  // 20-25 m/s - yellow
-  [254, 217, 118],  // 25-30 m/s - orange-yellow
-  [254, 178, 76],   // 30-35 m/s - orange
-  [253, 141, 60],   // 35-40 m/s - dark orange
-  [252, 78, 42],    // 40-45 m/s - red-orange
-  [227, 26, 28],    // 45+ m/s - red
+// Smoother color scale for wind speed (m/s) - more muted/aesthetic
+const COLOR_SCALE: [number, number, number][] = [
+  [100, 180, 200],  // 0-5 m/s - soft cyan
+  [120, 200, 180],  // 5-10 m/s - teal
+  [160, 210, 160],  // 10-15 m/s - soft green
+  [200, 220, 140],  // 15-20 m/s - lime
+  [230, 210, 120],  // 20-25 m/s - gold
+  [240, 180, 100],  // 25-30 m/s - orange
+  [240, 140, 90],   // 30-35 m/s - coral
+  [230, 100, 80],   // 35-40 m/s - salmon
+  [210, 70, 70],    // 40-45 m/s - red
+  [180, 50, 60],    // 45+ m/s - dark red
 ];
 
-function getColorForMagnitude(magnitude: number, colorScale: [number, number, number][]): [number, number, number, number] {
-  const maxSpeed = 50; // m/s
+function getColorForMagnitude(magnitude: number): [number, number, number] {
+  const maxSpeed = 40;
   const normalized = Math.min(magnitude / maxSpeed, 1);
-  const index = Math.min(Math.floor(normalized * (colorScale.length - 1)), colorScale.length - 1);
-  const color = colorScale[index];
-  const alpha = Math.min(150 + magnitude * 3, 255); // Brighter for faster wind
-  return [color[0], color[1], color[2], alpha];
+  const index = Math.min(Math.floor(normalized * (COLOR_SCALE.length - 1)), COLOR_SCALE.length - 1);
+  return COLOR_SCALE[index];
 }
 
 export function DeckWindParticleLayer({
   mapRef,
   windData,
   enabled = true,
-  particleCount = 5000,
-  particleSize = 2,
-  speedFactor = 0.25,
-  fadeOpacity = 0.96,
-  trailLength = 8,
-  colorScale = DEFAULT_COLOR_SCALE,
-  maxAge = 100,
+  particleCount = 4000,
+  lineWidth = 1.5,
+  speedFactor = 0.08, // Much slower
+  trailLength = 15,
+  maxAge = 80,
+  opacity = 0.7,
 }: DeckWindParticleLayerProps) {
   const overlayRef = useRef<MapboxOverlay | null>(null);
   const particlesRef = useRef<Particle[]>([]);
@@ -89,14 +80,9 @@ export function DeckWindParticleLayer({
         id: i,
         x,
         y,
-        lng,
-        lat,
         age: Math.floor(Math.random() * maxAge),
-        maxAge: maxAge + Math.floor(Math.random() * 20),
-        u: 0,
-        v: 0,
-        magnitude: 0,
-        trail: [[lng, lat]],
+        maxAge: maxAge + Math.floor(Math.random() * 30) - 15,
+        trail: [{ lng, lat, age: 0 }],
       });
     }
 
@@ -123,22 +109,26 @@ export function DeckWindParticleLayer({
 
         if (a > 0) {
           // Decode wind components
-          particle.u = ((r / 255) * 100 - 50); // -50 to +50 m/s
-          particle.v = ((g / 255) * 100 - 50);
-          particle.magnitude = Math.sqrt(particle.u * particle.u + particle.v * particle.v);
+          const u = ((r / 255) * 100 - 50);
+          const v = ((g / 255) * 100 - 50);
 
-          // Update position
-          particle.x += particle.u * speedFactor;
-          particle.y -= particle.v * speedFactor; // Y is inverted in image coords
+          // Update position with slower speed
+          particle.x += u * speedFactor;
+          particle.y -= v * speedFactor;
 
-          // Update lat/lng
-          particle.lng = bounds.west + (particle.x / width) * (bounds.east - bounds.west);
-          particle.lat = bounds.north - (particle.y / height) * (bounds.north - bounds.south);
+          // Calculate new lat/lng
+          const lng = bounds.west + (particle.x / width) * (bounds.east - bounds.west);
+          const lat = bounds.north - (particle.y / height) * (bounds.north - bounds.south);
 
-          // Update trail
-          particle.trail.push([particle.lng, particle.lat]);
+          // Add to trail with age tracking
+          particle.trail.unshift({ lng, lat, age: 0 });
+          
+          // Age all trail points
+          particle.trail.forEach(p => p.age++);
+          
+          // Trim trail
           if (particle.trail.length > trailLength) {
-            particle.trail.shift();
+            particle.trail = particle.trail.slice(0, trailLength);
           }
         }
       }
@@ -155,61 +145,69 @@ export function DeckWindParticleLayer({
         // Respawn at random position
         particle.x = Math.random() * width;
         particle.y = Math.random() * height;
-        particle.lng = bounds.west + (particle.x / width) * (bounds.east - bounds.west);
-        particle.lat = bounds.north - (particle.y / height) * (bounds.north - bounds.south);
+        const lng = bounds.west + (particle.x / width) * (bounds.east - bounds.west);
+        const lat = bounds.north - (particle.y / height) * (bounds.north - bounds.south);
         particle.age = 0;
-        particle.maxAge = maxAge + Math.floor(Math.random() * 20);
-        particle.trail = [[particle.lng, particle.lat]];
+        particle.maxAge = maxAge + Math.floor(Math.random() * 30) - 15;
+        particle.trail = [{ lng, lat, age: 0 }];
       }
     });
   }, [windData, speedFactor, trailLength, maxAge]);
 
-  // Create deck.gl layers
+  // Create deck.gl layers with fading trails
   const createLayers = useCallback(() => {
+    if (!windData) return [];
+    
     const particles = particlesRef.current;
-    if (particles.length === 0) return [];
+    const { imageData, width, height } = windData;
 
-    // Trail layer (lines)
-    const trailData = particles
-      .filter((p) => p.trail.length > 1 && p.magnitude > 0.5)
-      .map((p) => ({
-        id: p.id,
-        path: p.trail,
-        color: getColorForMagnitude(p.magnitude, colorScale),
-        width: Math.max(1, particleSize * 0.5),
-      }));
+    // Build path data with color based on wind magnitude at head position
+    const pathData = particles
+      .filter((p) => p.trail.length > 1)
+      .map((p) => {
+        // Get wind magnitude at particle head
+        const px = Math.floor(p.x);
+        const py = Math.floor(p.y);
+        let magnitude = 5;
+        
+        if (px >= 0 && px < width && py >= 0 && py < height) {
+          const idx = (py * width + px) * 4;
+          const r = imageData.data[idx];
+          const g = imageData.data[idx + 1];
+          const u = ((r / 255) * 100 - 50);
+          const v = ((g / 255) * 100 - 50);
+          magnitude = Math.sqrt(u * u + v * v);
+        }
 
-    // Particle head layer (points)
-    const pointData = particles
-      .filter((p) => p.magnitude > 0.5)
-      .map((p) => ({
-        position: [p.lng, p.lat],
-        color: getColorForMagnitude(p.magnitude, colorScale),
-        radius: particleSize + p.magnitude * 0.1,
-      }));
+        const baseColor = getColorForMagnitude(magnitude);
+        
+        return {
+          path: p.trail.map(t => [t.lng, t.lat]),
+          color: baseColor,
+          // Fade based on particle age (younger = brighter)
+          opacity: Math.max(0.1, 1 - (p.age / p.maxAge) * 0.5),
+        };
+      });
 
     return [
-      new LineLayer({
+      new PathLayer({
         id: 'wind-trails',
-        data: trailData,
-        getSourcePosition: (d: any) => d.path[0],
-        getTargetPosition: (d: any) => d.path[d.path.length - 1],
-        getColor: (d: any) => d.color,
-        getWidth: (d: any) => d.width,
+        data: pathData,
+        getPath: (d: any) => d.path,
+        getColor: (d: any) => [...d.color, Math.floor(d.opacity * 200)],
+        getWidth: lineWidth,
         widthUnits: 'pixels',
-        opacity: 0.6,
-      }),
-      new ScatterplotLayer({
-        id: 'wind-particles',
-        data: pointData,
-        getPosition: (d: any) => d.position,
-        getFillColor: (d: any) => d.color,
-        getRadius: (d: any) => d.radius,
-        radiusUnits: 'pixels',
-        opacity: 0.8,
+        widthMinPixels: 1,
+        widthMaxPixels: 3,
+        capRounded: true,
+        jointRounded: true,
+        billboard: false,
+        opacity: opacity,
+        // Fade along the trail
+        getPolygonOffset: () => [0, -100],
       }),
     ];
-  }, [colorScale, particleSize]);
+  }, [windData, lineWidth, opacity]);
 
   // Animation loop
   useEffect(() => {
@@ -230,20 +228,27 @@ export function DeckWindParticleLayer({
     // Initialize particles
     initParticles();
 
+    let lastTime = 0;
+    const targetFPS = 30; // Limit frame rate for smoother animation
+    const frameInterval = 1000 / targetFPS;
+
     // Animation loop
-    const animate = () => {
-      updateParticles();
-      
-      if (overlayRef.current) {
-        overlayRef.current.setProps({
-          layers: createLayers(),
-        });
+    const animate = (currentTime: number) => {
+      if (currentTime - lastTime >= frameInterval) {
+        updateParticles();
+        
+        if (overlayRef.current) {
+          overlayRef.current.setProps({
+            layers: createLayers(),
+          });
+        }
+        lastTime = currentTime;
       }
 
       animationFrameRef.current = requestAnimationFrame(animate);
     };
 
-    animate();
+    animationFrameRef.current = requestAnimationFrame(animate);
 
     return () => {
       if (animationFrameRef.current) {
@@ -284,7 +289,14 @@ export function DeckWindParticleLayer({
     }
   }, [enabled]);
 
-  return null; // This component renders via deck.gl overlay, not React DOM
+  // Reinitialize when particle count changes
+  useEffect(() => {
+    if (enabled && windData) {
+      initParticles();
+    }
+  }, [particleCount, enabled, windData, initParticles]);
+
+  return null;
 }
 
 export default DeckWindParticleLayer;

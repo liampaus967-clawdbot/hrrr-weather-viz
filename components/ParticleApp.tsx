@@ -991,10 +991,11 @@ const ParticleApp = () => {
           windData={customWindData}
           enabled={customWindEnabled}
           particleCount={customWindParticleCount}
-          particleSize={2}
-          speedFactor={0.25}
-          trailLength={8}
-          maxAge={100}
+          lineWidth={1.5}
+          speedFactor={0.08}
+          trailLength={15}
+          maxAge={80}
+          opacity={0.7}
         />
       </Map>
 
