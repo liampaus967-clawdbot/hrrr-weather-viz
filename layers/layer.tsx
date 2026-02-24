@@ -206,10 +206,10 @@ export const createNortheastWindLayer = (bandValue: string | null): LayerProps =
 
   // Build paint object dynamically
   const paint: any = {
-    "raster-particle-speed-factor": 0.6,
-    "raster-particle-fade-opacity-factor": 0.85,
+    "raster-particle-speed-factor": 0.4,
+    "raster-particle-fade-opacity-factor": 0.92,
     "raster-particle-reset-rate-factor": 0.3,
-    "raster-particle-count": 16000, // Will be updated dynamically based on zoom
+    "raster-particle-count": 2000, // Will be updated dynamically based on zoom
     "raster-particle-max-speed": 40,
     "raster-particle-color": [
         "interpolate",
@@ -307,10 +307,10 @@ export const createSoutheastWindLayer = (bandValue: string | null): LayerProps =
   console.log("Creating Southeast wind layer with band:", bandValue);
 
   const paint: any = {
-    "raster-particle-speed-factor": 0.6,
-    "raster-particle-fade-opacity-factor": 0.85,
+    "raster-particle-speed-factor": 0.4,
+    "raster-particle-fade-opacity-factor": 0.92,
     "raster-particle-reset-rate-factor": 0.3,
-    "raster-particle-count": 16000,
+    "raster-particle-count": 2000,
     "raster-particle-max-speed": 40,
     "raster-particle-color": [
         "interpolate",
@@ -404,10 +404,10 @@ export const southeastWindMagnitudeLayer: LayerProps = {
  */
 export const createNorthwestWindLayer = (bandValue: string | null): LayerProps => {
   const paint: any = {
-    "raster-particle-speed-factor": 0.6,
-    "raster-particle-fade-opacity-factor": 0.85,
+    "raster-particle-speed-factor": 0.4,
+    "raster-particle-fade-opacity-factor": 0.92,
     "raster-particle-reset-rate-factor": 0.3,
-    "raster-particle-count": 16000,
+    "raster-particle-count": 2000,
     "raster-particle-max-speed": 40,
     "raster-particle-color": [
         "interpolate", ["linear"], ["raster-particle-speed"],
@@ -437,10 +437,10 @@ export const northwestWindMagnitudeLayer: LayerProps = {
  */
 export const createSouthwestWindLayer = (bandValue: string | null): LayerProps => {
   const paint: any = {
-    "raster-particle-speed-factor": 0.6,
-    "raster-particle-fade-opacity-factor": 0.85,
+    "raster-particle-speed-factor": 0.4,
+    "raster-particle-fade-opacity-factor": 0.92,
     "raster-particle-reset-rate-factor": 0.3,
-    "raster-particle-count": 16000,
+    "raster-particle-count": 2000,
     "raster-particle-max-speed": 40,
     "raster-particle-color": [
         "interpolate", ["linear"], ["raster-particle-speed"],
@@ -470,10 +470,10 @@ export const southwestWindMagnitudeLayer: LayerProps = {
  */
 export const createWestCoastWindLayer = (bandValue: string | null): LayerProps => {
   const paint: any = {
-    "raster-particle-speed-factor": 0.6,
-    "raster-particle-fade-opacity-factor": 0.85,
+    "raster-particle-speed-factor": 0.4,
+    "raster-particle-fade-opacity-factor": 0.92,
     "raster-particle-reset-rate-factor": 0.3,
-    "raster-particle-count": 16000,
+    "raster-particle-count": 2000,
     "raster-particle-max-speed": 40,
     "raster-particle-color": [
         "interpolate", ["linear"], ["raster-particle-speed"],

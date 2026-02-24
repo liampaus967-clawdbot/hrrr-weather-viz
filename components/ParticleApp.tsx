@@ -879,38 +879,58 @@ const ParticleApp = () => {
     }
   }, [oceanMetadata, selectedOceanVariable, oceanLayerEnabled, initializeOceanLayers]);
 
-  // Update regional wind layer particle count based on zoom level
+  // Update regional wind layer particle count and tail length based on zoom level
   useEffect(() => {
     const map = mapRef.current?.getMap();
     const anyRegionalEnabled = northeastWindEnabled || southeastWindEnabled || northwestWindEnabled || southwestWindEnabled || westCoastWindEnabled;
     if (!map || !anyRegionalEnabled) return;
 
-    const updateParticleCount = () => {
+    const updateParticleProperties = () => {
       const zoom = map.getZoom();
       let particleCount: number;
+      let fadeOpacity: number;
+      let speedFactor: number;
 
-      if (zoom < 3) particleCount = 4000;
-      else if (zoom < 5) particleCount = 4000 + ((zoom - 3) / 2) * 4000;
-      else if (zoom < 7) particleCount = 8000 + ((zoom - 5) / 2) * 8000;
-      else if (zoom < 9) particleCount = 16000 + ((zoom - 7) / 2) * 8000;
-      else if (zoom < 11) particleCount = 24000 + ((zoom - 9) / 2) * 8000;
-      else particleCount = 32000;
+      // Much lower particle counts - aim for sparse, readable particles
+      if (zoom < 4) {
+        particleCount = 2000;
+        fadeOpacity = 0.92;  // Longer tails at wide view
+        speedFactor = 0.4;
+      } else if (zoom < 6) {
+        particleCount = 1500;
+        fadeOpacity = 0.88;
+        speedFactor = 0.5;
+      } else if (zoom < 8) {
+        particleCount = 1000;
+        fadeOpacity = 0.82;  // Shorter tails at close zoom
+        speedFactor = 0.6;
+      } else if (zoom < 10) {
+        particleCount = 800;
+        fadeOpacity = 0.75;  // Even shorter tails
+        speedFactor = 0.7;
+      } else {
+        particleCount = 500;
+        fadeOpacity = 0.65;  // Very short tails at max zoom
+        speedFactor = 0.8;
+      }
 
       const layers = ["northeast-wind-layer", "southeast-wind-layer", "northwest-wind-layer", "southwest-wind-layer", "westcoast-wind-layer"];
       layers.forEach((layerId) => {
         if (map.getLayer(layerId)) {
           map.setPaintProperty(layerId, "raster-particle-count", Math.round(particleCount));
+          map.setPaintProperty(layerId, "raster-particle-fade-opacity-factor", fadeOpacity);
+          map.setPaintProperty(layerId, "raster-particle-speed-factor", speedFactor);
         }
       });
     };
 
-    updateParticleCount();
-    map.on("zoom", updateParticleCount);
-    map.on("zoomend", updateParticleCount);
+    updateParticleProperties();
+    map.on("zoom", updateParticleProperties);
+    map.on("zoomend", updateParticleProperties);
 
     return () => {
-      map.off("zoom", updateParticleCount);
-      map.off("zoomend", updateParticleCount);
+      map.off("zoom", updateParticleProperties);
+      map.off("zoomend", updateParticleProperties);
     };
   }, [northeastWindEnabled, southeastWindEnabled, northwestWindEnabled, southwestWindEnabled, westCoastWindEnabled, mapRef]);
 
