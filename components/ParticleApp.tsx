@@ -45,6 +45,8 @@ import ForecastAnimationController from "@/components/ForecastAnimationControlle
 import WindForecastPopup from "@/components/WindForecastPopup";
 import { useTilePreloader } from "@/hooks/useTilePreloader";
 import { usePreloadedRasterLayers } from "@/hooks/usePreloadedRasterLayers";
+import { useWindData } from "@/hooks/useWindData";
+import DeckWindParticleLayer from "@/components/DeckWindParticleLayer";
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
 
@@ -204,6 +206,11 @@ const ParticleApp = () => {
   const [tbofsCurrentBandValue, setTbofsCurrentBandValue] = useState<string | null>(null);
   const [tbofsCurrentBandLoaded, setTbofsCurrentBandLoaded] = useState(false);
 
+  // State for Custom S3 Wind Particle Layer (deck.gl)
+  const [customWindEnabled, setCustomWindEnabled] = useState(false);
+  const [customWindForecast, setCustomWindForecast] = useState<string>("00");
+  const [customWindParticleCount, setCustomWindParticleCount] = useState(5000);
+
   // Weather metadata from S3
   const {
     metadata: weatherMetadata,
@@ -239,6 +246,17 @@ const ParticleApp = () => {
 
   // Map ref for error handling
   const mapRef = useRef<MapRef>(null);
+
+  // Custom S3 Wind Data (deck.gl particle layer)
+  const {
+    windData: customWindData,
+    loading: customWindLoading,
+    error: customWindError,
+    refresh: refreshCustomWind,
+  } = useWindData({
+    forecastHour: customWindForecast,
+    enabled: customWindEnabled,
+  });
 
   // Auto-select first variable when metadata loads
   useEffect(() => {
@@ -962,6 +980,18 @@ const ParticleApp = () => {
             <Layer {...createTbofsCurrentLayer(tbofsCurrentBandValue)} />
           </Source>
         )}
+
+        {/* Custom S3 Wind Particle Layer (deck.gl) */}
+        <DeckWindParticleLayer
+          mapRef={mapRef}
+          windData={customWindData}
+          enabled={customWindEnabled}
+          particleCount={customWindParticleCount}
+          particleSize={2}
+          speedFactor={0.25}
+          trailLength={8}
+          maxAge={100}
+        />
       </Map>
 
       {/* Mobile Panel Toggle Button */}
@@ -1179,6 +1209,53 @@ const ParticleApp = () => {
               {herbieWindEnabled ? "ON" : "OFF"}
             </span>
           </button>
+
+          {/* Custom S3 Wind Layer (deck.gl) */}
+          <button
+            onClick={() => setCustomWindEnabled(!customWindEnabled)}
+            className={`wind-btn ${customWindEnabled ? 'active' : ''}`}
+            style={{ marginTop: '8px', borderColor: customWindEnabled ? '#10b981' : undefined }}
+          >
+            <span>🎯 Custom Wind (S3/deck.gl)</span>
+            <span className={`wind-status ${customWindEnabled ? 'on' : 'off'}`}>
+              {customWindEnabled ? "ON" : "OFF"}
+            </span>
+          </button>
+
+          {customWindEnabled && (
+            <div style={{ marginTop: '8px', padding: '8px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '8px', fontSize: '11px' }}>
+              {customWindLoading && <div style={{ color: '#fbbf24' }}>Loading wind data...</div>}
+              {customWindError && <div style={{ color: '#ef4444' }}>Error: {customWindError}</div>}
+              {customWindData && (
+                <div style={{ color: '#10b981' }}>
+                  ✓ Loaded {customWindData.width}x{customWindData.height} wind field
+                </div>
+              )}
+              <div style={{ marginTop: '8px' }}>
+                <label style={{ color: 'rgba(255,255,255,0.7)' }}>Particles: {customWindParticleCount}</label>
+                <input
+                  type="range"
+                  min="1000"
+                  max="20000"
+                  step="1000"
+                  value={customWindParticleCount}
+                  onChange={(e) => setCustomWindParticleCount(parseInt(e.target.value))}
+                  style={{ width: '100%', marginTop: '4px' }}
+                />
+              </div>
+              <div style={{ marginTop: '8px' }}>
+                <label style={{ color: 'rgba(255,255,255,0.7)' }}>Forecast Hour: F{customWindForecast}</label>
+                <input
+                  type="range"
+                  min="0"
+                  max="12"
+                  value={parseInt(customWindForecast)}
+                  onChange={(e) => setCustomWindForecast(String(e.target.value).padStart(2, '0'))}
+                  style={{ width: '100%', marginTop: '4px' }}
+                />
+              </div>
+            </div>
+          )}
 
           {/* Northeast Wind Resampled Toggle */}
           <button
