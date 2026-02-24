@@ -114,10 +114,10 @@ export const createHerbieWindLayer = (bandValue: string): LayerProps => {
     maxzoom: 7, // Stop showing at zoom level 7
     paint: {
       "raster-particle-array-band": String(bandValue),
-      "raster-particle-speed-factor": 0.4,
-      "raster-particle-fade-opacity-factor": 0.9,
+      "raster-particle-speed-factor": 0.3,
+      "raster-particle-fade-opacity-factor": 0.85,
       "raster-particle-reset-rate-factor": 0.4,
-      "raster-particle-count": 3000,
+      "raster-particle-count": 800,
       "raster-particle-max-speed": 40,
       "raster-particle-color": [
         "interpolate",

@@ -72,15 +72,35 @@ export function DeckWindParticleLayer({
   const [viewBounds, setViewBounds] = useState<ViewBounds | null>(null);
   const [zoom, setZoom] = useState(3);
 
-  // Calculate particle count based on zoom level
+  // Calculate particle count based on zoom level - DECREASE as you zoom in
   const getParticleCount = useCallback((currentZoom: number) => {
-    // At zoom 3: base count
-    // At zoom 6: 2x base count
-    // At zoom 9: 4x base count
-    // At zoom 12: 8x base count
-    const zoomFactor = Math.pow(2, Math.max(0, currentZoom - 3) / 3);
-    return Math.min(Math.floor(baseParticleCount * zoomFactor), 50000);
+    if (currentZoom < 4) return baseParticleCount;
+    if (currentZoom < 6) return Math.floor(baseParticleCount * 0.5);
+    if (currentZoom < 8) return Math.floor(baseParticleCount * 0.2);
+    if (currentZoom < 10) return Math.floor(baseParticleCount * 0.08);
+    if (currentZoom < 12) return Math.floor(baseParticleCount * 0.03);
+    return Math.floor(baseParticleCount * 0.01); // Very sparse at max zoom
   }, [baseParticleCount]);
+
+  // Calculate speed factor based on zoom - SLOWER as you zoom in
+  const getSpeedFactor = useCallback((currentZoom: number) => {
+    if (currentZoom < 4) return speedFactor;
+    if (currentZoom < 6) return speedFactor * 0.7;
+    if (currentZoom < 8) return speedFactor * 0.4;
+    if (currentZoom < 10) return speedFactor * 0.2;
+    if (currentZoom < 12) return speedFactor * 0.1;
+    return speedFactor * 0.05; // Nearly still at max zoom
+  }, [speedFactor]);
+
+  // Calculate trail length based on zoom - SHORTER as you zoom in
+  const getTrailLength = useCallback((currentZoom: number) => {
+    if (currentZoom < 4) return trailLength;
+    if (currentZoom < 6) return Math.floor(trailLength * 0.8);
+    if (currentZoom < 8) return Math.floor(trailLength * 0.6);
+    if (currentZoom < 10) return Math.floor(trailLength * 0.4);
+    if (currentZoom < 12) return Math.floor(trailLength * 0.25);
+    return Math.max(3, Math.floor(trailLength * 0.15)); // Minimal trail at max zoom
+  }, [trailLength]);
 
   // Initialize/reinitialize particles within view bounds
   const initParticles = useCallback((forceViewBounds?: ViewBounds, forceZoom?: number) => {
@@ -133,6 +153,10 @@ export function DeckWindParticleLayer({
 
     const { imageData, width, height, bounds } = windData;
     const particles = particlesRef.current;
+    
+    // Get zoom-adjusted values
+    const currentSpeedFactor = getSpeedFactor(zoom);
+    const currentTrailLength = getTrailLength(zoom);
 
     particles.forEach((particle) => {
       // Get wind at current position
@@ -150,9 +174,9 @@ export function DeckWindParticleLayer({
           const u = ((r / 255) * 100 - 50);
           const v = ((g / 255) * 100 - 50);
 
-          // Update position with slower speed
-          particle.x += u * speedFactor;
-          particle.y -= v * speedFactor;
+          // Update position with zoom-adjusted speed
+          particle.x += u * currentSpeedFactor;
+          particle.y -= v * currentSpeedFactor;
 
           // Calculate new lat/lng
           const lng = bounds.west + (particle.x / width) * (bounds.east - bounds.west);
@@ -164,9 +188,9 @@ export function DeckWindParticleLayer({
           // Age all trail points
           particle.trail.forEach(p => p.age++);
           
-          // Trim trail
-          if (particle.trail.length > trailLength) {
-            particle.trail = particle.trail.slice(0, trailLength);
+          // Trim trail based on zoom
+          if (particle.trail.length > currentTrailLength) {
+            particle.trail = particle.trail.slice(0, currentTrailLength);
           }
         }
       }
@@ -200,7 +224,7 @@ export function DeckWindParticleLayer({
         particle.trail = [{ lng, lat, age: 0 }];
       }
     });
-  }, [windData, speedFactor, trailLength, maxAge, viewBounds, zoom]);
+  }, [windData, speedFactor, trailLength, maxAge, viewBounds, zoom, getSpeedFactor, getTrailLength]);
 
   // Create deck.gl layers with fading trails
   const createLayers = useCallback(() => {
