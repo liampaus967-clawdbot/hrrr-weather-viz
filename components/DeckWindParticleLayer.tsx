@@ -78,8 +78,8 @@ export function DeckWindParticleLayer({
     if (currentZoom < 6) return Math.floor(baseParticleCount * 0.5);
     if (currentZoom < 8) return Math.floor(baseParticleCount * 0.2);
     if (currentZoom < 10) return Math.floor(baseParticleCount * 0.08);
-    if (currentZoom < 12) return Math.floor(baseParticleCount * 0.03);
-    return Math.floor(baseParticleCount * 0.01); // Very sparse at max zoom
+    if (currentZoom < 12) return Math.floor(baseParticleCount * 0.04);
+    return Math.floor(baseParticleCount * 0.025); // Slightly more at max zoom
   }, [baseParticleCount]);
 
   // Calculate speed factor based on zoom - SLOWER as you zoom in
@@ -87,9 +87,9 @@ export function DeckWindParticleLayer({
     if (currentZoom < 4) return speedFactor;
     if (currentZoom < 6) return speedFactor * 0.7;
     if (currentZoom < 8) return speedFactor * 0.4;
-    if (currentZoom < 10) return speedFactor * 0.2;
-    if (currentZoom < 12) return speedFactor * 0.1;
-    return speedFactor * 0.05; // Nearly still at max zoom
+    if (currentZoom < 10) return speedFactor * 0.15;
+    if (currentZoom < 12) return speedFactor * 0.06;
+    return speedFactor * 0.02; // Barely moving at max zoom
   }, [speedFactor]);
 
   // Calculate trail length based on zoom - SHORTER as you zoom in
