@@ -10,38 +10,47 @@ export interface WindData {
     south: number;
     north: number;
   };
-  metadata: WindMetadata | null;
+  metadata: LatestWindMetadata | null;
 }
 
-export interface WindMetadata {
-  source_file: string;
-  shape: number[];
-  wind_encoding: {
-    min: number;
-    max: number;
-    unit: string;
+export interface LatestWindMetadata {
+  model: string;
+  model_run: {
+    date: string;
+    cycle: string;
+    timestamp: string;
+  };
+  forecast_hours: number[];
+  tiles: {
+    base_url: string;
+    filename_pattern: string;
+    width: number;
+    height: number;
+  };
+  encoding: {
     r_channel: string;
     g_channel: string;
     b_channel: string;
-    encoding: string;
+    min_value: number;
+    max_value: number;
+    zero_value: number;
   };
-  bounds?: {
+  bounds: {
     west: number;
     east: number;
-    south: number;
     north: number;
+    south: number;
   };
+  generated_at: string;
 }
 
 interface UseWindDataOptions {
-  baseUrl?: string;
-  date?: string;
-  cycle?: string;
+  metadataUrl?: string;
   forecastHour?: string;
   enabled?: boolean;
 }
 
-// HRRR CONUS bounds (approximate)
+// HRRR CONUS bounds (fallback)
 const HRRR_BOUNDS = {
   west: -134.1,
   east: -60.9,
@@ -51,24 +60,37 @@ const HRRR_BOUNDS = {
 
 export function useWindData(options: UseWindDataOptions = {}) {
   const {
-    baseUrl = 'https://driftwise-weather-data.s3.amazonaws.com/wind-tiles',
-    date,
-    cycle,
+    metadataUrl = 'https://driftwise-weather-data.s3.amazonaws.com/metadata/latest_wind.json',
     forecastHour = '00',
     enabled = true,
   } = options;
 
   const [windData, setWindData] = useState<WindData | null>(null);
+  const [metadata, setMetadata] = useState<LatestWindMetadata | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  // Decode wind component from 0-255 to m/s
-  const decodeWindComponent = useCallback((encoded: number, min = -50, max = 50): number => {
-    const normalized = encoded / 255;
-    return normalized * (max - min) + min;
-  }, []);
+  // Fetch latest metadata
+  const fetchMetadata = useCallback(async (): Promise<LatestWindMetadata | null> => {
+    try {
+      const cacheBuster = `?_t=${Date.now()}`;
+      const res = await fetch(metadataUrl + cacheBuster, {
+        cache: 'no-store',
+      });
+      if (!res.ok) {
+        throw new Error(`Failed to fetch metadata: ${res.status}`);
+      }
+      const data = await res.json();
+      setMetadata(data);
+      return data;
+    } catch (e) {
+      console.error('Failed to fetch latest_wind.json:', e);
+      return null;
+    }
+  }, [metadataUrl]);
 
+  // Load wind tile data
   const loadWindData = useCallback(async () => {
     if (!enabled) return;
 
@@ -76,31 +98,22 @@ export function useWindData(options: UseWindDataOptions = {}) {
     setError(null);
 
     try {
-      // Build URL - if no date specified, try to find latest
-      let targetDate = date;
-      let targetCycle = cycle;
-
-      if (!targetDate || !targetCycle) {
-        // Get latest available (approximately 3 hours ago)
-        const now = new Date();
-        now.setHours(now.getHours() - 3);
-        targetDate = now.toISOString().split('T')[0];
-        targetCycle = String(now.getUTCHours()).padStart(2, '0');
+      // Fetch latest metadata first
+      let meta = metadata;
+      if (!meta) {
+        meta = await fetchMetadata();
       }
 
-      const pngUrl = `${baseUrl}/${targetDate}/${targetCycle}Z/wind_${targetDate.replace(/-/g, '')}_t${targetCycle}z_f${forecastHour}.png`;
-      const jsonUrl = `${baseUrl}/${targetDate}/${targetCycle}Z/wind_${targetDate.replace(/-/g, '')}_t${targetCycle}z_f${forecastHour}.json`;
-
-      // Load metadata
-      let metadata: WindMetadata | null = null;
-      try {
-        const metaRes = await fetch(jsonUrl);
-        if (metaRes.ok) {
-          metadata = await metaRes.json();
-        }
-      } catch (e) {
-        console.warn('Failed to load wind metadata:', e);
+      if (!meta) {
+        throw new Error('Could not load wind metadata');
       }
+
+      // Build tile URL from metadata
+      const forecastNum = forecastHour.padStart(2, '0');
+      const pngUrl = meta.tiles.base_url + '/' + 
+        meta.tiles.filename_pattern.replace('{forecast}', forecastNum);
+
+      console.log('Loading wind tile:', pngUrl);
 
       // Load PNG image
       const img = new Image();
@@ -128,16 +141,18 @@ export function useWindData(options: UseWindDataOptions = {}) {
       ctx.drawImage(img, 0, 0);
       const imageData = ctx.getImageData(0, 0, img.width, img.height);
 
-      // Use bounds from metadata if available, otherwise use HRRR defaults
-      const bounds = metadata?.bounds || HRRR_BOUNDS;
+      // Use bounds from metadata
+      const bounds = meta.bounds || HRRR_BOUNDS;
 
       setWindData({
         imageData,
         width: img.width,
         height: img.height,
         bounds,
-        metadata,
+        metadata: meta,
       });
+
+      console.log(`Wind data loaded: ${img.width}x${img.height}, forecast F${forecastNum}`);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error loading wind data';
       setError(message);
@@ -145,12 +160,26 @@ export function useWindData(options: UseWindDataOptions = {}) {
     } finally {
       setLoading(false);
     }
-  }, [baseUrl, date, cycle, forecastHour, enabled]);
+  }, [enabled, metadata, forecastHour, fetchMetadata]);
 
   // Auto-load when parameters change
   useEffect(() => {
-    loadWindData();
+    if (enabled) {
+      loadWindData();
+    }
+  }, [enabled, forecastHour]);
+
+  // Refresh metadata and reload
+  const refresh = useCallback(async () => {
+    setMetadata(null);
+    await loadWindData();
   }, [loadWindData]);
+
+  // Decode wind component from 0-255 to m/s
+  const decodeWindComponent = useCallback((encoded: number, min = -50, max = 50): number => {
+    const normalized = encoded / 255;
+    return normalized * (max - min) + min;
+  }, []);
 
   // Helper to get wind vector at a given pixel coordinate
   const getWindAtPixel = useCallback((x: number, y: number): { u: number; v: number; magnitude: number } | null => {
@@ -192,11 +221,13 @@ export function useWindData(options: UseWindDataOptions = {}) {
 
   return {
     windData,
+    metadata,
     loading,
     error,
-    refresh: loadWindData,
+    refresh,
     getWindAtPixel,
     getWindAtLatLng,
+    availableForecastHours: metadata?.forecast_hours || [],
   };
 }
 

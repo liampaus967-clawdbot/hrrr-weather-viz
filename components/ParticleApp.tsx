@@ -210,8 +210,6 @@ const ParticleApp = () => {
   const [customWindEnabled, setCustomWindEnabled] = useState(false);
   const [customWindForecast, setCustomWindForecast] = useState<string>("00");
   const [customWindParticleCount, setCustomWindParticleCount] = useState(5000);
-  const [customWindDate, setCustomWindDate] = useState<string>("2026-02-24");
-  const [customWindCycle, setCustomWindCycle] = useState<string>("15");
 
   // Weather metadata from S3
   const {
@@ -249,15 +247,15 @@ const ParticleApp = () => {
   // Map ref for error handling
   const mapRef = useRef<MapRef>(null);
 
-  // Custom S3 Wind Data (deck.gl particle layer)
+  // Custom S3 Wind Data (deck.gl particle layer) - auto-fetches latest from S3
   const {
     windData: customWindData,
+    metadata: customWindMetadata,
     loading: customWindLoading,
     error: customWindError,
     refresh: refreshCustomWind,
+    availableForecastHours: customWindForecastHours,
   } = useWindData({
-    date: customWindDate,
-    cycle: customWindCycle,
     forecastHour: customWindForecast,
     enabled: customWindEnabled,
   });
@@ -1255,6 +1253,12 @@ const ParticleApp = () => {
             <div style={{ marginTop: '8px', padding: '8px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '8px', fontSize: '11px' }}>
               {customWindLoading && <div style={{ color: '#fbbf24' }}>Loading wind data...</div>}
               {customWindError && <div style={{ color: '#ef4444' }}>Error: {customWindError}</div>}
+              {customWindMetadata && (
+                <div style={{ color: '#10b981', marginBottom: '6px' }}>
+                  <div style={{ fontWeight: 'bold' }}>HRRR {customWindMetadata.model_run.cycle}</div>
+                  <div style={{ opacity: 0.8 }}>{customWindMetadata.model_run.date}</div>
+                </div>
+              )}
               {customWindData && (
                 <div style={{ color: '#10b981' }}>
                   ✓ Loaded {customWindData.width}x{customWindData.height} wind field
@@ -1273,16 +1277,25 @@ const ParticleApp = () => {
                 />
               </div>
               <div style={{ marginTop: '8px' }}>
-                <label style={{ color: 'rgba(255,255,255,0.7)' }}>Forecast Hour: F{customWindForecast}</label>
+                <label style={{ color: 'rgba(255,255,255,0.7)' }}>
+                  Forecast Hour: F{customWindForecast}
+                  {customWindForecastHours.length > 0 && ` (${customWindForecastHours.length} available)`}
+                </label>
                 <input
                   type="range"
                   min="0"
-                  max="12"
+                  max={customWindForecastHours.length > 0 ? Math.max(...customWindForecastHours) : 12}
                   value={parseInt(customWindForecast)}
                   onChange={(e) => setCustomWindForecast(String(e.target.value).padStart(2, '0'))}
                   style={{ width: '100%', marginTop: '4px' }}
                 />
               </div>
+              <button
+                onClick={refreshCustomWind}
+                style={{ marginTop: '8px', padding: '4px 8px', fontSize: '10px', cursor: 'pointer' }}
+              >
+                🔄 Refresh
+              </button>
             </div>
           )}
 
