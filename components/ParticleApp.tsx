@@ -210,6 +210,8 @@ const ParticleApp = () => {
   const [customWindEnabled, setCustomWindEnabled] = useState(false);
   const [customWindForecast, setCustomWindForecast] = useState<string>("00");
   const [customWindParticleCount, setCustomWindParticleCount] = useState(5000);
+  const [customWindDate, setCustomWindDate] = useState<string>("2026-02-24");
+  const [customWindCycle, setCustomWindCycle] = useState<string>("15");
 
   // Weather metadata from S3
   const {
@@ -254,6 +256,8 @@ const ParticleApp = () => {
     error: customWindError,
     refresh: refreshCustomWind,
   } = useWindData({
+    date: customWindDate,
+    cycle: customWindCycle,
     forecastHour: customWindForecast,
     enabled: customWindEnabled,
   });
