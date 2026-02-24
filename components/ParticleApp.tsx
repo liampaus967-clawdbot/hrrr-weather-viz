@@ -879,7 +879,7 @@ const ParticleApp = () => {
     }
   }, [oceanMetadata, selectedOceanVariable, oceanLayerEnabled, initializeOceanLayers]);
 
-  // Update regional wind layer particle count and tail length based on zoom level
+  // Update regional wind layer particle count, tail length, and speed based on zoom level
   useEffect(() => {
     const map = mapRef.current?.getMap();
     const anyRegionalEnabled = northeastWindEnabled || southeastWindEnabled || northwestWindEnabled || southwestWindEnabled || westCoastWindEnabled;
@@ -891,27 +891,31 @@ const ParticleApp = () => {
       let fadeOpacity: number;
       let speedFactor: number;
 
-      // Much lower particle counts - aim for sparse, readable particles
+      // Very sparse particles at close zoom, slower speed as you zoom in
       if (zoom < 4) {
-        particleCount = 2000;
-        fadeOpacity = 0.92;  // Longer tails at wide view
-        speedFactor = 0.4;
-      } else if (zoom < 6) {
         particleCount = 1500;
-        fadeOpacity = 0.88;
-        speedFactor = 0.5;
-      } else if (zoom < 8) {
-        particleCount = 1000;
-        fadeOpacity = 0.82;  // Shorter tails at close zoom
-        speedFactor = 0.6;
-      } else if (zoom < 10) {
+        fadeOpacity = 0.92;  // Longer tails at wide view
+        speedFactor = 0.5;   // Normal speed
+      } else if (zoom < 6) {
         particleCount = 800;
-        fadeOpacity = 0.75;  // Even shorter tails
-        speedFactor = 0.7;
+        fadeOpacity = 0.85;
+        speedFactor = 0.35;  // Slower
+      } else if (zoom < 8) {
+        particleCount = 400;
+        fadeOpacity = 0.75;  // Shorter tails
+        speedFactor = 0.25;  // Even slower
+      } else if (zoom < 10) {
+        particleCount = 200;
+        fadeOpacity = 0.65;  // Short tails
+        speedFactor = 0.15;  // Much slower
+      } else if (zoom < 12) {
+        particleCount = 100;
+        fadeOpacity = 0.55;  // Very short tails
+        speedFactor = 0.08;  // Very slow
       } else {
-        particleCount = 500;
-        fadeOpacity = 0.65;  // Very short tails at max zoom
-        speedFactor = 0.8;
+        particleCount = 50;
+        fadeOpacity = 0.45;  // Minimal tails
+        speedFactor = 0.04;  // Crawling slow
       }
 
       const layers = ["northeast-wind-layer", "southeast-wind-layer", "northwest-wind-layer", "southwest-wind-layer", "westcoast-wind-layer"];
