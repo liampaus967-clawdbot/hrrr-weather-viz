@@ -7,16 +7,16 @@
  */
 
 import React, { useEffect, useRef, useCallback, useState } from 'react';
-import { StyleSheet, View, PixelRatio } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import {
   Canvas,
   Path,
   Skia,
   LinearGradient,
   vec,
-  useValue,
-  useComputedValue,
-  runTiming,
+  Group,
+  Paint,
+  BlendMode,
 } from '@shopify/react-native-skia';
 import type { SkPath } from '@shopify/react-native-skia';
 import type { Camera } from '@rnmapbox/maps';
@@ -150,7 +150,12 @@ export function SkiaWindParticles({
   fadeColor = 'transparent',
 }: SkiaWindParticlesProps) {
   const particlesRef = useRef<Particle[]>([]);
-  const [paths, setPaths] = useState<{ path: SkPath; headColor: string; tailColor: string }[]>([]);
+  const [paths, setPaths] = useState<{ 
+    path: SkPath; 
+    headColor: string; 
+    headPos: { x: number; y: number };
+    tailPos: { x: number; y: number };
+  }[]>([]);
   const animationRef = useRef<number | null>(null);
   const zoom = mapCamera?.zoom ?? 3;
 
@@ -244,12 +249,17 @@ export function SkiaWindParticles({
     });
   }, [windData, mapBounds, zoom, trailLength, maxAge]);
 
-  // Build Skia paths
+  // Build Skia paths with gradient info
   const buildPaths = useCallback(() => {
     if (!mapBounds) return;
 
     const particles = particlesRef.current;
-    const newPaths: { path: SkPath; headColor: string; tailColor: string }[] = [];
+    const newPaths: { 
+      path: SkPath; 
+      headColor: string; 
+      headPos: { x: number; y: number };
+      tailPos: { x: number; y: number };
+    }[] = [];
 
     particles.forEach((p) => {
       if (p.trail.length < 2) return;
@@ -275,12 +285,12 @@ export function SkiaWindParticles({
             started = true;
           } else {
             path.lineTo(screen.x, screen.y);
-            tailPos = screen;
           }
+          tailPos = screen; // Last valid point becomes tail
         }
       });
 
-      if (started && headPos && tailPos) {
+      if (started && headPos && tailPos && (headPos.x !== tailPos.x || headPos.y !== tailPos.y)) {
         // Get wind speed for color
         const magnitude = Math.sqrt(
           Math.pow(p.trail[0].lng - p.trail[1].lng, 2) +
@@ -290,7 +300,8 @@ export function SkiaWindParticles({
         newPaths.push({
           path,
           headColor: getColorForSpeed(magnitude * 10),
-          tailColor: 'transparent',
+          headPos,
+          tailPos,
         });
       }
     });
@@ -348,9 +359,13 @@ export function SkiaWindParticles({
           strokeWidth={2}
           strokeCap="round"
           strokeJoin="round"
-          color={p.headColor}
-          opacity={0.8}
-        />
+        >
+          <LinearGradient
+            start={vec(p.headPos.x, p.headPos.y)}
+            end={vec(p.tailPos.x, p.tailPos.y)}
+            colors={[p.headColor, 'transparent']}
+          />
+        </Path>
       ))}
     </Canvas>
   );
