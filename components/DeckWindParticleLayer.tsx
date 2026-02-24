@@ -226,47 +226,57 @@ export function DeckWindParticleLayer({
     });
   }, [windData, speedFactor, trailLength, maxAge, viewBounds, zoom, getSpeedFactor, getTrailLength]);
 
-  // Create deck.gl layers with fading trails
+  // Create deck.gl layers with fading trails (head bright, tail fades out)
   const createLayers = useCallback(() => {
     if (!windData) return [];
     
     const particles = particlesRef.current;
     const { imageData, width, height } = windData;
 
-    // Build path data with color based on wind magnitude at head position
-    const pathData = particles
-      .filter((p) => p.trail.length > 1)
-      .map((p) => {
-        // Get wind magnitude at particle head
-        const px = Math.floor(p.x);
-        const py = Math.floor(p.y);
-        let magnitude = 5;
-        
-        if (px >= 0 && px < width && py >= 0 && py < height) {
-          const idx = (py * width + px) * 4;
-          const r = imageData.data[idx];
-          const g = imageData.data[idx + 1];
-          const u = ((r / 255) * 100 - 50);
-          const v = ((g / 255) * 100 - 50);
-          magnitude = Math.sqrt(u * u + v * v);
-        }
+    // Build segment data - each trail broken into 2-point segments with fading alpha
+    const segmentData: { path: [number, number][]; color: [number, number, number, number] }[] = [];
 
-        const baseColor = getColorForMagnitude(magnitude);
+    particles.forEach((p) => {
+      if (p.trail.length < 2) return;
+
+      // Get wind magnitude at particle head for color
+      const px = Math.floor(p.x);
+      const py = Math.floor(p.y);
+      let magnitude = 5;
+      
+      if (px >= 0 && px < width && py >= 0 && py < height) {
+        const idx = (py * width + px) * 4;
+        const r = imageData.data[idx];
+        const g = imageData.data[idx + 1];
+        const u = ((r / 255) * 100 - 50);
+        const v = ((g / 255) * 100 - 50);
+        magnitude = Math.sqrt(u * u + v * v);
+      }
+
+      const baseColor = getColorForMagnitude(magnitude);
+      const trailLen = p.trail.length;
+
+      // Create a segment for each pair of consecutive points
+      for (let i = 0; i < trailLen - 1; i++) {
+        const t0 = p.trail[i];
+        const t1 = p.trail[i + 1];
         
-        return {
-          path: p.trail.map(t => [t.lng, t.lat]),
-          color: baseColor,
-          // Fade based on particle age (younger = brighter)
-          opacity: Math.max(0.1, 1 - (p.age / p.maxAge) * 0.5),
-        };
-      });
+        // Alpha fades from 255 at head (i=0) to near 0 at tail
+        const alpha = Math.floor(255 * Math.pow(1 - (i / trailLen), 1.5));
+        
+        segmentData.push({
+          path: [[t0.lng, t0.lat], [t1.lng, t1.lat]],
+          color: [baseColor[0], baseColor[1], baseColor[2], alpha],
+        });
+      }
+    });
 
     return [
       new PathLayer({
         id: 'wind-trails',
-        data: pathData,
+        data: segmentData,
         getPath: (d: any) => d.path,
-        getColor: (d: any) => [...d.color, Math.floor(d.opacity * 200)],
+        getColor: (d: any) => d.color,
         getWidth: lineWidth,
         widthUnits: 'pixels',
         widthMinPixels: 1,
@@ -275,7 +285,6 @@ export function DeckWindParticleLayer({
         jointRounded: true,
         billboard: false,
         opacity: opacity,
-        // Fade along the trail
         getPolygonOffset: () => [0, -100],
       }),
     ];
